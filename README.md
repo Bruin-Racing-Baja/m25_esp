@@ -1,53 +1,83 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-P4 | ESP32-S2 | ESP32-S3 | Linux |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- | -------- | ----- |
+# BAJA M25 ESP
+Bruin Racing Baja M25 Repository
 
-# Hello World Example
+## Install Dependencies
+Install the ESP-IDF Development Environment
 
-Starts a FreeRTOS task to print "Hello World".
+Tested with: 
+- ESP-IDF v5.1
+- Python 3.8+ 
+ 
+Install Instructions: 
+https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/index.html
 
-(See the README.md file in the upper level 'examples' directory for more information about examples.)
+## Clone the Repository 
+```bash
+# git clone [INSERT LINK]
+cd baja_m25_esp
+```
 
-## How to use example
+## Setup Environment
+### macOS
+```bash
+. $HOME/esp/esp-idf/export.sh
+```
 
-Follow detailed instructions provided specifically for this example.
+## Building Project
+```
+idf.py fullclean
+idf.py build
+```
 
-Select the instructions depending on Espressif chip installed on your development board:
+## Flash to Device 
+```
+idf.py flash
+```
 
-- [ESP32 Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/stable/get-started/index.html)
-- [ESP32-S2 Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/get-started/index.html)
+## Monitor Serial Output 
+```
+idf.py monitor
+```
 
-
-## Example folder contents
-
-The project **hello_world** contains one source file in C language [hello_world_main.c](main/hello_world_main.c). The file is located in folder [main](main).
-
-ESP-IDF projects are built using CMake. The project build configuration is contained in `CMakeLists.txt` files that provide set of directives and instructions describing the project's source files and targets (executable, library, or both).
-
-Below is short explanation of remaining files in the project folder.
+## Directory Contents
 
 ```
 ├── CMakeLists.txt
-├── pytest_hello_world.py      Python script used for automated testing
+├── README.md
 ├── main
 │   ├── CMakeLists.txt
-│   └── hello_world_main.c
-└── README.md                  This is the file you are currently reading
+│   ├── app_main.cpp
+│   ├── include
+│   │   ├── README
+│   │   ├── centerlock_controller.h
+│   │   ├── ecvt_controller.h
+│   │   ├── filters
+│   │   │   ├── iir_filter.h
+│   │   │   └── median_filter.h
+│   │   ├── input_output
+│   │   │   ├── button.h
+│   │   │   ├── centerlock_limit_switch.h
+│   │   │   ├── ecvt_limit_switch.h
+│   │   │   ├── led.h
+│   │   │   └── shift_register.h
+│   │   ├── odrive.h
+│   │   ├── sensors
+│   │   │   ├── brake_pot_sensor.h
+│   │   │   ├── gear_tooth_sensor.h
+│   │   │   ├── sensor.h
+│   │   │   └── throt_pot_sensor.h
+│   │   └── telemetry.h
+│   └── src
+│       ├── centerlock_controller.cpp
+│       ├── ecvt_controller.cpp
+│       └── odrive.cpp
+├── sdkconfig
+├── sdkconfig.ci
+└── test
+    └── pytest_hello_world.py
 ```
 
-For more information on structure and contents of ESP-IDF projects, please refer to Section [Build System](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/build-system.html) of the ESP-IDF Programming Guide.
+- `sdkconfig.ci` is a reproducible configuration snapshot and is safe to commit.  
+- `sdkconfig` is machine-specific and should not be committed.
 
-## Troubleshooting
 
-* Program upload failure
-
-    * Hardware connection is not correct: run `idf.py -p PORT monitor`, and reboot your board to see if there are any output logs.
-    * The baud rate for downloading is too high: lower your baud rate in the `menuconfig` menu, and try again.
-
-## Technical support and feedback
-
-Please use the following feedback channels:
-
-* For technical queries, go to the [esp32.com](https://esp32.com/) forum
-* For a feature request or bug report, create a [GitHub issue](https://github.com/espressif/esp-idf/issues)
-
-We will get back to you as soon as possible.
