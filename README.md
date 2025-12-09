@@ -14,7 +14,7 @@ https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/index.ht
 ## Clone the Repository 
 ```bash
 # git clone [INSERT LINK]
-cd baja_m25_esp
+cd m25_esp
 ```
 
 ## Setup Environment
