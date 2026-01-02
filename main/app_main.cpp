@@ -4,6 +4,7 @@
 #include "freertos/FreeRTOS.h" 
 #include "freertos/task.h"
 
+#include "constants.h"
 #include "odrive.h"
 #include "ecvt_controller.h"
 #include "centerlock_controller.h"
@@ -12,4 +13,5 @@
 extern "C" void app_main(void)
 {
     printf("Hello world!\n");
+    init_constants(); /* Must be called first */
 }
