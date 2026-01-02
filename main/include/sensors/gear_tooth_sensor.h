@@ -3,6 +3,8 @@
 
 #include "sensor.h"
 #include <stdint.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/portmacro.h"
 
 class GearToothSensor: public Sensor {
 public: 
@@ -26,6 +28,9 @@ public:
     inline float get_rpm() const { return rpm; } /* Must call calculate_rpm() first */
 
 private:
+    /* Spinlock for geartooth sensor class */
+    portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
+
     /* Frequency (number of ticks) at which we collect timing information about GTS. */
     const uint32_t sample_window;
 
