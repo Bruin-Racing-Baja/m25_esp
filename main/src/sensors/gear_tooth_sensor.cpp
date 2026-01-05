@@ -1,6 +1,6 @@
-#include "gear_tooth_sensor.h"
+#include "sensors/gear_tooth_sensor.h"
 #include "esp_cpu.h"
-#include "../constants.h"
+#include "constants.h"
 
 /* Update sensor count and time values. */
 void GearToothSensor::update_isr() {
@@ -13,7 +13,7 @@ void GearToothSensor::update_isr() {
             time_diff_us = cur_time_us - last_sample_time_us;
             last_sample_time_us = cur_time_us; 
         }
-        count++; 
+        count += 1; 
         last_time_us = cur_time_us;
     }
 }

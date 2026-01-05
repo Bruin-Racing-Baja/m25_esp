@@ -1,8 +1,8 @@
 #ifndef BRAKE_POT_H
 #define BRAKE_POT_H
 
-#include "sensor.h"
-#include "../macros.h"
+#include "sensors/sensor.h"
+#include "macros.h"
 #include <stdint.h>
 
 #include "freertos/FreeRTOS.h"
@@ -10,11 +10,11 @@
 
 class BrakePot: public Sensor {
 public: 
-    BrakePot(uint32_t min_brake_, uint32_t max_brake_): 
-        raw_brake(0),
-        brake(0.0f),
+    BrakePot(uint32_t min_brake_, uint32_t max_brake_):
         min_brake(min_brake_),
-        max_brake(max_brake_)
+        max_brake(max_brake_),
+        raw_brake(0),
+        brake(0.0f)
         {}
 
     bool init(); 

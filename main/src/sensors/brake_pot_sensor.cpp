@@ -1,5 +1,5 @@
-#include "brake_pot_sensor.h"
- 
+#include "sensors/brake_pot_sensor.h"
+
 bool BrakePot::init() {
     /**
      * Initialize prper pins as input with correct config.
@@ -7,7 +7,7 @@ bool BrakePot::init() {
    return true;
 }
 
-void BrakePot::update() {
+void BrakePot::update_isr() {
     /** 
      * Read value from brake pot sensor and update private raw_brake field 
      * with proper value.

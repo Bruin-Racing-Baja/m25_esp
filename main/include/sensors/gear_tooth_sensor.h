@@ -1,7 +1,7 @@
 #ifndef GEARTOOTH_SENSOR_H
 #define GEARTOOTH_SENSOR_H
 
-#include "sensor.h"
+#include "sensors/sensor.h"
 #include <stdint.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/portmacro.h"
@@ -9,14 +9,14 @@
 class GearToothSensor: public Sensor {
 public: 
     GearToothSensor(uint32_t sample_window_, uint32_t counts_per_rot_, uint32_t min_time_diff_us_ = 300): 
-        count(0), 
-        time_diff_us(0), 
-        last_time_us(0),
-        last_sample_time_us(0),
-        rpm(0.0f),
-        sample_window(sample_window_), 
+        sample_window(sample_window_),
+        min_time_diff_us(min_time_diff_us_),
         counts_per_rot(counts_per_rot_),
-        min_time_diff_us(min_time_diff_us_) 
+        count(0),  
+        last_sample_time_us(0),
+        last_time_us(0),
+        time_diff_us(0),
+        rpm(0.0f)
         {}
 
     virtual void update_isr();
