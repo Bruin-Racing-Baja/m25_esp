@@ -18,7 +18,7 @@ public:
         {}
 
     bool init(); 
-    virtual void update();
+    virtual void update_isr();
     
     inline uint32_t get_raw_brake() { return raw_brake; }
     inline float get_brake() { return map_int_to_float(raw_brake, min_brake, max_brake, 0, 1); }

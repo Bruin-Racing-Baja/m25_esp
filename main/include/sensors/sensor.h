@@ -4,7 +4,7 @@
 class Sensor {
 public:
     Sensor() {}
-    virtual void update() = 0; 
+    virtual void update_isr() = 0; 
 };
 
 #endif // SENSOR_H

@@ -19,13 +19,12 @@ public:
         min_time_diff_us(min_time_diff_us_) 
         {}
 
-    virtual void update();
-    void calculate_rpm();
+    virtual void update_isr();
 
     /* Getter Functions */
     inline uint32_t get_count() const { return count; }
     inline uint64_t get_time_diff_us() const { return time_diff_us; }
-    inline float get_rpm() const { return rpm; } /* Must call calculate_rpm() first */
+    float get_rpm();
 
 private:
     /* Frequency (number of ticks) at which we collect timing information about GTS. */
