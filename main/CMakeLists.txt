@@ -6,9 +6,8 @@ idf_component_register(
         "src/constants.cpp" 
         "src/sensors/brake_pot_sensor.cpp" 
         "src/sensors/gear_tooth_sensor.cpp"
+        "src/sensors/throt_pot_sensor.cpp"
         "app_main.cpp"
     INCLUDE_DIRS 
         "include" 
 )
-
-
