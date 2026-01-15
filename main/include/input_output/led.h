@@ -4,9 +4,9 @@
 class LED {
 public:
     LED() {}
-    void writePin(bool state);
-    void pinMode(int mode);
-    void setFlashTime(int time);
+    void write_pin(bool state);
+    void pin_mode(int mode);
+    void set_flash_time(int time);
 
 private:
     int pin;

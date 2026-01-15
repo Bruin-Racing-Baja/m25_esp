@@ -5,12 +5,12 @@ class Button {
 public:
     Button() {}
 
-    bool readPin();
-    bool isPressed();
-    bool readLastState();
+    bool read_pin();
+    bool is_pressed();
+    bool read_last_state();
 
-    bool pressTriggered();
-    bool releaseTriggered();
+    bool press_triggered();
+    bool release_triggered();
 
 private:
     int pin;

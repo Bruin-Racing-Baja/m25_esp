@@ -6,24 +6,24 @@ public:
     ECVTLimitSwitch() {}
 
     // Returns true if the limit switch is activated
-    bool inboundTriggered() const {
+    bool inbound_triggered() const {
         return inbound_limit_switch_activated;
     }
-    bool outboundTriggered() const {
+    bool outbound_triggered() const {
         return outbound_limit_switch_activated;
     }
-    bool engageTriggered() const {
+    bool engage_triggered() const {
         return engage_limit_switch_activated;
     }
 
     // Returns true if the switch was pressed
-    bool inboundPressed() const {
+    bool inbound_pressed() const {
         return inbound_pressed;
     }
-    bool outboundPressed() const {
+    bool outbound_pressed() const {
         return outbound_pressed;
     }
-    bool engagePressed() const {
+    bool engage_pressed() const {
         return engage_pressed;
     }
     
