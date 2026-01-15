@@ -6,6 +6,9 @@ idf_component_register(
         "app_main.cpp"
     INCLUDE_DIRS 
         "include" 
+    REQUIRES
+        driver esp_adc
+        
 )
 
 

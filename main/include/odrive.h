@@ -10,8 +10,6 @@ typedef void (*odrive_rx_cb_t)(const uint8_t* data, size_t len, void* ctx);
 class ODrive {
 public:
     ODrive();
-    ~ODrive();
-
     // Initialize the driver (does not start RX task)
     // Returns true on success.
     bool init(uart_port_t uart_num, int tx_io_num, int rx_io_num, int baudrate = 115200, int rx_buffer_size = 1024);
