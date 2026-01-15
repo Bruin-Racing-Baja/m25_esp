@@ -5,10 +5,6 @@ class Button {
 public:
     Button() {}
 
-    bool read_pin();
-    bool is_pressed();
-    bool read_last_state();
-
     bool press_triggered();
     bool release_triggered();
 
