@@ -1,9 +1,14 @@
-#pragma once
+#ifndef GPIO_WRAPPER_H
+#define GPIO_WRAPPER_H
 
 #include <cstdint>
 #include "driver/gpio.h"
+#include "esp_adc/adc_oneshot.h"
+#include "esp_adc/adc_continuous.h" 
 
 typedef void (*IsrHandler)(void*); // Function pointer type
+extern bool adc_initialized;
+extern adc_oneshot_unit_handle_t adc_handle;
 
 // Constants for convenience
 constexpr int LOW = 0;
@@ -41,6 +46,7 @@ void digitalWrite(int pin, bool level);
 int digitalRead(int pin);
 
 int analogRead(int pin);
-void analogWrite(int pin, int duty);
 
 void attachInterrupt(int pin, IsrHandler handler, InterruptMode mode, void* arg = nullptr);
+
+#endif //GPIO_WRAPPER_H

@@ -1,5 +1,13 @@
 #include "gpio_wrapper.h"
+extern "C" {
+    #include "driver/gpio.h"
+}
 #include "esp_adc/adc_oneshot.h"
+#include "esp_err.h"
+
+bool adc_initialized = false;
+adc_oneshot_unit_handle_t adc_handle;
+
 void pinMode(int pin, PinMode mode) {
     gpio_config_t io_conf = {};
 
@@ -74,7 +82,8 @@ void digitalWrite(int pin, int level) {
 }
 
 void digitalWrite(int pin, bool level) {
-    gpio_set_level(static_cast<gpio_num_t>(pin), level ? 1 : 0);
+    gpio_num_t gpio_num = static_cast<gpio_num_t>(pin);
+    gpio_set_level(gpio_num, level ? 1 : 0);
 }
 
 int digitalRead(int pin) {

@@ -8,11 +8,12 @@
 #include "ecvt_controller.h"
 #include "centerlock_controller.h"
 #include "telemetry.h"
+#include "gpio_wrapper.h"
 
 extern "C" void app_main(void)
 {
     printf("Hello world!\n");
-
+    
     // Example usage of ODrive class (UART)
     static ODrive odrv;
 
