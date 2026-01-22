@@ -16,8 +16,8 @@ public:
     void turn_on_all();
     void turn_off_all();
 
-    void turn_on_led(int led_number);
-    void turn_off_led(int led_number);
+    void turn_on_led(int led_pin);
+    void turn_off_led(int led_pin);
 
 private:
     vector<int> pins;
