@@ -8,7 +8,7 @@ ODrive::ODrive()
     : tx_pin_(GPIO_NUM_NC)
     , rx_pin_(GPIO_NUM_NC)
     , bitrate_(500000)
-    , rx_buffer_depth_(10)
+    , rx_buffer_depth_(64)
     , node_handle_(nullptr)
     , rx_pool_(nullptr)
     , write_idx_(0)
@@ -67,8 +67,8 @@ bool ODrive::init(gpio_num_t tx_pin, gpio_num_t rx_pin, uint32_t bitrate)
         .fail_retry_cnt = 3,
         .tx_queue_depth = 10,
         .flags = {
-            .enable_self_test = true,
-            .enable_loopback = true,
+            .enable_self_test = false,
+            .enable_loopback = false,
         },
     };
     // Configure TWAI on-chip node (step-by-step to avoid C++ nested initializer issues)
@@ -77,7 +77,7 @@ bool ODrive::init(gpio_num_t tx_pin, gpio_num_t rx_pin, uint32_t bitrate)
 
     twai_mask_filter_config_t mfilter_cfg = {
     .id = 0x00,         // 0b 000 0001 0000
-    .mask = 0x7ff,      // 0b 111 1111 0000 — the upper 7 bits must match strictly, the lower 4 bits are ignored, accepts IDs of the form
+    .mask = 0x00,      // 0b 111 1111 0000 — the upper 7 bits must match strictly, the lower 4 bits are ignored, accepts IDs of the form
                         // 0b 000 0001 xxxx (hex 0x01x)
     .is_ext = false,    // Accept only standard IDs, not extended IDs
     };

@@ -10,7 +10,11 @@ idf_component_register(
     INCLUDE_DIRS 
         "include" 
     REQUIRES
-        driver esp_adc esp_timer
+        esp_driver_twai
+        driver 
+        esp_adc 
+        esp_timer
+        
         
         
 )
