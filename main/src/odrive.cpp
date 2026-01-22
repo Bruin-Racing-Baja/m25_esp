@@ -8,7 +8,15 @@ ODrive::ODrive()
     : tx_pin_(GPIO_NUM_NC)
     , rx_pin_(GPIO_NUM_NC)
     , bitrate_(500000)
+    , rx_buffer_depth_(10)
+    , node_handle_(nullptr)
+    , rx_pool_(nullptr)
+    , write_idx_(0)
+    , read_idx_(0)
+    , free_pool_sem_(nullptr)
+    , rx_ready_sem_(nullptr)
     , rx_task_handle_(nullptr)
+    , running_(false)
     , heartbeat_cb_(nullptr)
     , heartbeat_ctx_(nullptr)
     , encoder_cb_(nullptr)
@@ -25,63 +33,80 @@ ODrive::~ODrive()
 
 bool ODrive::init(gpio_num_t tx_pin, gpio_num_t rx_pin, uint32_t bitrate)
 {
-    tx_pin_ = tx_pin;
-    rx_pin_ = rx_pin;
-    bitrate_ = bitrate;
-
-    // Configure TWAI timing based on bitrate
-    twai_timing_config_t timing_config;
-    
-    switch (bitrate) {
-        case 1000000:
-            timing_config = TWAI_TIMING_CONFIG_1MBITS();
-            break;
-        case 500000:
-            timing_config = TWAI_TIMING_CONFIG_500KBITS();
-            break;
-        case 250000:
-            timing_config = TWAI_TIMING_CONFIG_250KBITS();
-            break;
-        case 125000:
-            timing_config = TWAI_TIMING_CONFIG_125KBITS();
-            break;
-        default:
-            ESP_LOGE(TAG, "Unsupported bitrate: %lu", bitrate);
-            return false;
-    }
-
-    // Configure filter to accept all messages
-    twai_filter_config_t filter_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();
-
-    // Configure general settings
-    twai_general_config_t general_config = TWAI_GENERAL_CONFIG_DEFAULT(
-        tx_pin, rx_pin, TWAI_MODE_NORMAL);
-    general_config.rx_queue_len = 20;
-    general_config.tx_queue_len = 10;
-
-    // Install TWAI driver
-    esp_err_t err = twai_driver_install(&general_config, &timing_config, &filter_config);
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to install TWAI driver: %s", esp_err_to_name(err));
+    rx_pool_ = (RxFrameBuffer*)calloc(rx_buffer_depth_, sizeof(RxFrameBuffer));
+    if (!rx_pool_) {
+        ESP_LOGE(TAG, "Failed to allocate RX buffer pool");
         return false;
     }
 
-    ESP_LOGI(TAG, "TWAI driver installed (TX: GPIO%d, RX: GPIO%d, %lu bps)", 
-             tx_pin, rx_pin, bitrate);
+    // Initialize frame buffers
+    for (int i = 0; i < rx_buffer_depth_; i++) {
+        rx_pool_[i].frame.buffer = rx_pool_[i].data;
+        rx_pool_[i].frame.buffer_len = sizeof(rx_pool_[i].data);
+    }
+
+    free_pool_sem_ = xSemaphoreCreateCounting(rx_buffer_depth_, rx_buffer_depth_);
+    rx_ready_sem_ = xSemaphoreCreateCounting(rx_buffer_depth_, 0);
+
+    if (!free_pool_sem_ || !rx_ready_sem_) {
+        ESP_LOGE(TAG, "Failed to create semaphores");
+        free(rx_pool_);
+        rx_pool_ = nullptr;
+        return false;
+    }
+    twai_onchip_node_config_t node_config = {
+        .io_cfg = {
+            .tx = tx_pin,
+            .rx = rx_pin,
+            .quanta_clk_out = GPIO_NUM_NC,
+            .bus_off_indicator = GPIO_NUM_NC,
+        },
+        .bit_timing = {
+            .bitrate = bitrate,
+        },
+        .fail_retry_cnt = 3,
+        .tx_queue_depth = 10,
+        .flags = {
+            .enable_self_test = true,
+            .enable_loopback = true,
+        },
+    };
+    // Configure TWAI on-chip node (step-by-step to avoid C++ nested initializer issues)
+    
+    // Configure filter to accept all messages
+
+    twai_mask_filter_config_t mfilter_cfg = {
+    .id = 0x00,         // 0b 000 0001 0000
+    .mask = 0x7ff,      // 0b 111 1111 0000 — the upper 7 bits must match strictly, the lower 4 bits are ignored, accepts IDs of the form
+                        // 0b 000 0001 xxxx (hex 0x01x)
+    .is_ext = false,    // Accept only standard IDs, not extended IDs
+    };
+    // Create TWAI node
+    
+    ESP_ERROR_CHECK(twai_new_node_onchip(&node_config, &node_handle_));
+    
+    ESP_ERROR_CHECK(twai_node_config_mask_filter(node_handle_, 0, &mfilter_cfg));   // Configure on filter 0
+    twai_event_callbacks_t callbacks = {};
+    callbacks.on_rx_done = ODrive::on_rx_done_ISR;
+    callbacks.on_error = ODrive::on_error_ISR;
+    callbacks.on_state_change = ODrive::on_state_change_ISR;
+
+    ESP_ERROR_CHECK(twai_node_register_event_callbacks(node_handle_, &callbacks, this));
+
+    ESP_LOGI(TAG, "TWAI node created (TX: GPIO%d, RX: GPIO%d, %lu bps, %d buffer depth)", 
+             tx_pin, rx_pin, bitrate, rx_buffer_depth_);
+
+    return true;
+
 
     return true;
 }
 
 bool ODrive::start()
 {
-    // Start TWAI driver
-    esp_err_t err = twai_start();
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to start TWAI: %s", esp_err_to_name(err));
-        return false;
-    }
+    ESP_ERROR_CHECK(twai_node_enable(node_handle_));
+    running_ = true;
 
-    // Create RX task
     BaseType_t result = xTaskCreate(
         rx_task_entry,
         "odrive_can_rx",
@@ -93,24 +118,115 @@ bool ODrive::start()
 
     if (result != pdPASS) {
         ESP_LOGE(TAG, "Failed to create RX task");
-        twai_stop();
+        twai_node_disable(node_handle_);
+        running_ = false;
         return false;
     }
-
     ESP_LOGI(TAG, "ODrive CAN started");
     return true;
 }
 
 void ODrive::stop()
 {
+    running_ = false;
+    if (rx_ready_sem_) {
+        xSemaphoreGive(rx_ready_sem_);
+    }
+
+    // Wait a bit for task to exit
     if (rx_task_handle_) {
+        vTaskDelay(pdMS_TO_TICKS(200));
         vTaskDelete(rx_task_handle_);
         rx_task_handle_ = nullptr;
     }
 
-    twai_stop();
-    twai_driver_uninstall();
+    // Disable and delete TWAI node
+    if (node_handle_) {
+        twai_node_disable(node_handle_);
+        twai_node_delete(node_handle_);
+        node_handle_ = nullptr;
+    }
+
+    // Clean up semaphores
+    if (free_pool_sem_) {
+        vSemaphoreDelete(free_pool_sem_);
+        free_pool_sem_ = nullptr;
+    }
+    if (rx_ready_sem_) {
+        vSemaphoreDelete(rx_ready_sem_);
+        rx_ready_sem_ = nullptr;
+    }
+
+    // Free buffer pool
+    if (rx_pool_) {
+        free(rx_pool_);
+        rx_pool_ = nullptr;
+    }
+
     ESP_LOGI(TAG, "ODrive CAN stopped");
+}
+
+bool IRAM_ATTR ODrive::on_rx_done_ISR(twai_node_handle_t handle, const twai_rx_done_event_data_t* edata, void* user_ctx)
+{
+    ODrive* self = (ODrive*)user_ctx;
+    BaseType_t woken = pdFALSE;
+
+    // Check if we have free buffer slots
+    if (xSemaphoreTakeFromISR(self->free_pool_sem_, &woken) != pdTRUE) {
+        ESP_EARLY_LOGW(TAG, "RX buffer full, dropping frame");
+        return (woken == pdTRUE);
+    }
+
+    // Receive frame into ring buffer
+    if (twai_node_receive_from_isr(handle, &self->rx_pool_[self->write_idx_].frame) == ESP_OK) {
+        self->write_idx_ = (self->write_idx_ + 1) % self->rx_buffer_depth_;
+        xSemaphoreGiveFromISR(self->rx_ready_sem_, &woken);
+    } else {
+        // Failed to receive, give back the free slot
+        xSemaphoreGiveFromISR(self->free_pool_sem_, &woken);
+    }
+
+    return (woken == pdTRUE);
+}
+
+bool IRAM_ATTR ODrive::on_error_ISR(twai_node_handle_t handle, const twai_error_event_data_t* edata, void* user_ctx)
+{
+    ESP_EARLY_LOGW(TAG, "CAN bus error: 0x%lx", edata->err_flags.val);
+    return false;
+}
+
+bool IRAM_ATTR ODrive::on_state_change_ISR(twai_node_handle_t handle, const twai_state_change_event_data_t* edata, void* user_ctx)
+{
+    const char* state_names[] = {"ERROR_ACTIVE", "ERROR_WARNING", "ERROR_PASSIVE", "BUS_OFF"};
+    ESP_EARLY_LOGI(TAG, "State: %s -> %s", state_names[edata->old_sta], state_names[edata->new_sta]);
+    return false;
+}
+
+void ODrive::rx_task_entry(void* arg)
+{
+    ODrive* self = (ODrive*)arg;
+    self->rx_task();
+    vTaskDelete(NULL);
+}
+
+void ODrive::rx_task()
+{
+    ESP_LOGI(TAG, "RX task started");
+
+    while (running_) {
+        // Block until frame is available (or timeout for periodic checks)
+        if (xSemaphoreTake(rx_ready_sem_, pdMS_TO_TICKS(1000)) == pdTRUE) {
+            // Process the frame
+            twai_frame_t* frame = &rx_pool_[read_idx_].frame;
+            process_msg(*frame);
+
+            // Move to next slot and mark as free
+            read_idx_ = (read_idx_ + 1) % rx_buffer_depth_;
+            xSemaphoreGive(free_pool_sem_);
+        }
+    }
+
+    ESP_LOGI(TAG, "RX task exiting");
 }
 
 uint32_t ODrive::build_can_id(uint8_t node_id, uint16_t cmd_id)
@@ -121,23 +237,23 @@ uint32_t ODrive::build_can_id(uint8_t node_id, uint16_t cmd_id)
 
 void ODrive::send_can_msg(uint32_t can_id, const uint8_t* data, uint8_t len, bool remote)
 {
-    twai_message_t msg;
-    msg.identifier = can_id;
-    msg.data_length_code = len;
-    msg.extd = 0;  
-    msg.rtr = remote ? 1 : 0;   
-    msg.ss = 0;
-    msg.self = 0;
-    msg.dlc_non_comp = 0;
+    twai_frame_t tx_msg = {
+        .header = {
+            .id = can_id,
+            .dlc = len,
+            .ide = false,
+            .rtr = remote,
+            .fdf = false,
+        },
+        .buffer_len = len,  // Length of data to transmit
+    };
 
     if (data && len > 0) {
-        memcpy(msg.data, data, len);
+        memcpy(tx_msg.buffer, data, len);
     }
 
-    esp_err_t err = twai_transmit(&msg, pdMS_TO_TICKS(100));
-    if (err != ESP_OK) {
-        ESP_LOGW(TAG, "Failed to send CAN message: %s", esp_err_to_name(err));
-    }
+    ESP_ERROR_CHECK(twai_node_transmit(node_handle_, &tx_msg, pdMS_TO_TICKS(100)));
+    
 }
 
 void ODrive::set_axis_state(uint8_t node_id, odrive_axis_state_t state)
@@ -271,47 +387,24 @@ void ODrive::set_iq_callback(odrive_iq_cb_t cb, void* ctx)
     iq_ctx_ = ctx;
 }
 
-void ODrive::rx_task_entry(void* arg)
-{
-    ODrive* self = (ODrive*)arg;
-    self->rx_task();
-    vTaskDelete(NULL);
-}
-
-void ODrive::rx_task()
-{
-    twai_message_t rx_msg;
-    
-    while (true) {
-        esp_err_t err = twai_receive(&rx_msg, pdMS_TO_TICKS(100));
-        
-        if (err == ESP_OK) {
-            process_msg(rx_msg);
-        } else if (err == ESP_ERR_TIMEOUT) {
-            // Normal timeout, continue
-        } else {
-            ESP_LOGW(TAG, "TWAI receive error: %s", esp_err_to_name(err));
-        }
-    }
-}
-
-void ODrive::process_msg(const twai_message_t& msg)
+void ODrive::process_msg(const twai_frame_t& msg)
 {
     // Extract node ID and command ID from CAN ID
-    uint8_t node_id = (msg.identifier >> 5) & 0x3F;
-    uint16_t cmd_id = msg.identifier & 0x1F;
-
+    uint8_t node_id = (msg.header.id >> 5) & 0x3F;
+    uint16_t cmd_id = msg.header.id & 0x1F;
+    ESP_LOGI(TAG, "RX: %x [%d] %x %x %x %x", \
+                     msg.header.id, msg.header.dlc, msg.buffer[0], msg.buffer[1], msg.buffer[2], msg.buffer[3]);
     switch (cmd_id) {
         case CAN_HEARTBEAT:
-            parse_heartbeat(node_id, msg.data, msg.data_length_code);
+            parse_heartbeat(node_id, msg.buffer, msg.header.dlc);
             break;
             
         case CAN_GET_ENCODER_ESTIMATES:
-            parse_encoder_estimates(node_id, msg.data, msg.data_length_code);
+            parse_encoder_estimates(node_id, msg.buffer, msg.header.dlc);
             break;
             
         case CAN_GET_IQ:
-            parse_iq(node_id, msg.data, msg.data_length_code);
+            parse_iq(node_id, msg.buffer, msg.header.dlc);
             break;
             
         default:

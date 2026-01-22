@@ -1,10 +1,12 @@
 #ifndef ODRIVE_CAN_H
 #define ODRIVE_CAN_H
 
-#include "driver/twai.h"
+#include "esp_twai.h"
+#include "esp_twai_onchip.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
+#include "freertos/semphr.h"
 #include <stdint.h>
 
 // ODrive CAN Protocol Commands (CMD_ID portion of arbitration ID)
@@ -106,6 +108,10 @@ public:
     bool start();
     void stop();
 
+    
+
+
+
     // Command functions
     void set_axis_state(uint8_t node_id, odrive_axis_state_t state);
     void set_controller_mode(uint8_t node_id, odrive_control_mode_t ctrl_mode, odrive_input_mode_t input_mode);
@@ -132,14 +138,23 @@ public:
     void set_iq_callback(odrive_iq_cb_t cb, void* ctx);
 
 private:
+    struct RxFrameBuffer {
+        twai_frame_t frame;
+        uint8_t data[8];
+    };
     // CAN message construction
     uint32_t build_can_id(uint8_t node_id, uint16_t cmd_id);
     void send_can_msg(uint32_t can_id, const uint8_t* data, uint8_t len, bool remote = false);
     
+    static bool IRAM_ATTR on_rx_done_ISR(twai_node_handle_t handle, const twai_rx_done_event_data_t* edata, void* user_ctx);
+    static bool IRAM_ATTR on_error_ISR(twai_node_handle_t handle, const twai_error_event_data_t* edata, void* user_ctx);
+    static bool IRAM_ATTR on_state_change_ISR(twai_node_handle_t handle, const twai_state_change_event_data_t* edata, void* user_ctx);
+
+
     // RX task
     static void rx_task_entry(void* arg);
     void rx_task();
-    void process_msg(const twai_message_t& msg);
+    void process_msg(const twai_frame_t& msg);
 
     // Helper functions for parsing
     void parse_heartbeat(uint8_t node_id, const uint8_t* data, uint8_t len);
@@ -150,9 +165,22 @@ private:
     gpio_num_t tx_pin_;
     gpio_num_t rx_pin_;
     uint32_t bitrate_;
+    int rx_buffer_depth_;
+
+    twai_node_handle_t node_handle_;
+    // Task handle
+
+    RxFrameBuffer* rx_pool_;
+    volatile int write_idx_;
+    volatile int read_idx_;
+
+    // Semaphores for flow control
+    SemaphoreHandle_t free_pool_sem_;
+    SemaphoreHandle_t rx_ready_sem_;
 
     // Task handle
     TaskHandle_t rx_task_handle_;
+    volatile bool running_;
 
     // Callbacks
     odrive_heartbeat_cb_t heartbeat_cb_;
