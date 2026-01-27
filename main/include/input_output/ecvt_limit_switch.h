@@ -5,7 +5,15 @@ class ECVTLimitSwitch {
 public:
     ECVTLimitSwitch() {}
 
-    // Returns true if the limit switch is activated
+    void begin();
+
+    void isr_update_inbound();
+    void isr_update_outbound();
+    void isr_update_engage();
+
+    void end();
+
+    //triggered functions
     bool is_inbound_triggered() const {
         return inbound_limit_switch_activated; 
     }
@@ -16,7 +24,7 @@ public:
         return engage_limit_switch_activated;
     }
 
-    // Returns true if the switch was pressed
+    // engaged functions
     bool is_inbound_engaged() const {
         return inbound_engaged;
     }
@@ -26,14 +34,6 @@ public:
     bool is_engage_engaged() const {
         return engage_engaged;
     }
-    
-    void begin();
-
-    void isr_update_inbound();
-    void isr_update_outbound();
-    void isr_update_engage();
-
-    void end();
 
 private:
     bool inbound_limit_switch_activated;

@@ -10,6 +10,8 @@ public:
     void isr_update_inbound();
     void end();
 
+    // engaged functions
+    
     bool is_outbound_engaged(){
         return disengage_pressed;
     }
