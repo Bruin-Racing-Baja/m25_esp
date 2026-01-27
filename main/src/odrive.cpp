@@ -8,7 +8,7 @@ ODrive::ODrive()
     : tx_pin_(GPIO_NUM_NC)
     , rx_pin_(GPIO_NUM_NC)
     , bitrate_(500000)
-    , rx_buffer_depth_(10)
+    , rx_buffer_depth_(64)
     , node_handle_(nullptr)
     , rx_pool_(nullptr)
     , write_idx_(0)
@@ -67,8 +67,8 @@ bool ODrive::init(gpio_num_t tx_pin, gpio_num_t rx_pin, uint32_t bitrate)
         .fail_retry_cnt = 3,
         .tx_queue_depth = 10,
         .flags = {
-            .enable_self_test = true,
-            .enable_loopback = true,
+            .enable_self_test = false,
+            .enable_loopback = false,
         },
     };
     
