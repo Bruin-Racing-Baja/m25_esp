@@ -71,15 +71,12 @@ bool ODrive::init(gpio_num_t tx_pin, gpio_num_t rx_pin, uint32_t bitrate)
             .enable_loopback = true,
         },
     };
-    // Configure TWAI on-chip node (step-by-step to avoid C++ nested initializer issues)
     
-    // Configure filter to accept all messages
 
     twai_mask_filter_config_t mfilter_cfg = {
-    .id = 0x00,         // 0b 000 0001 0000
-    .mask = 0x7ff,      // 0b 111 1111 0000 — the upper 7 bits must match strictly, the lower 4 bits are ignored, accepts IDs of the form
-                        // 0b 000 0001 xxxx (hex 0x01x)
-    .is_ext = false,    // Accept only standard IDs, not extended IDs
+    .id = 0x00,         
+    .mask = 0x7ff,                          
+    .is_ext = false,    
     };
     // Create TWAI node
     
@@ -95,9 +92,6 @@ bool ODrive::init(gpio_num_t tx_pin, gpio_num_t rx_pin, uint32_t bitrate)
 
     ESP_LOGI(TAG, "TWAI node created (TX: GPIO%d, RX: GPIO%d, %lu bps, %d buffer depth)", 
              tx_pin, rx_pin, bitrate, rx_buffer_depth_);
-
-    return true;
-
 
     return true;
 }
