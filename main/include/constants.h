@@ -15,9 +15,15 @@ constexpr float INCHES_PER_MM = 1 / MM_PER_INCH; /* inch / mm */
 constexpr float FEET_PER_MILE = 5280.0; /* feet / mile */
 constexpr float INCH_PER_FEET = 12.0;   /* inch / feet */
 
-/* External Constants */
-void init_constants(); 
+// Powertrain
+constexpr uint32_t ENGINE_SAMPLE_WINDOW = 4;
+constexpr uint32_t GEAR_SAMPLE_WINDOW = 10;
 
-extern uint32_t CPU_HZ; /* CPU Frequency (Hz) */
+constexpr float ENGINE_COUNTS_PER_ROT = 16; // count / rot
+constexpr float GEAR_COUNTS_PER_ROT = 6;    // count / rot
+
+// Electronics Pins 
+constexpr uint32_t ENGINE_GEARTOOTH_SENSOR_PIN = 17;
+constexpr uint32_t GEARBOX_GEARTOOTH_SENSOR_PIN = 16;
 
 #endif // CONSTANTS_H

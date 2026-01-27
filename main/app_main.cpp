@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/param.h>
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "esp_log.h"
@@ -8,7 +9,12 @@
 #include "esp_twai.h"
 #include "esp_twai_onchip.h"
 #include "driver/gpio.h"
+
 #include <odrive.h>
+#include <sensors/gear_tooth_sensor.h>
+#include <constants.h> 
+#include <gpio_wrapper.h>
+
 #define TWAI_SENDER_TX_GPIO     GPIO_NUM_5
 #define TWAI_SENDER_RX_GPIO     GPIO_NUM_4
 #define TWAI_QUEUE_DEPTH        10
@@ -20,6 +26,9 @@
 #define TWAI_DATA_LEN           1000
 
 static const char *TAG = "twai_sender";
+
+/* Globally Defined For Now */
+GearToothSensor primary_gts(ENGINE_SAMPLE_WINDOW, ENGINE_COUNTS_PER_ROT); 
 
 typedef struct {
     twai_frame_t frame;
@@ -42,8 +51,14 @@ static IRAM_ATTR bool twai_sender_on_error_callback(twai_node_handle_t handle, c
     return false; // No task wake required
 }
 
+static void IRAM_ATTR primary_geartooth_sensor_callback(void * params) {
+    primary_gts.update_isr(); 
+}
+
 extern "C" void app_main(void)
 {
+    attachInterrupt(ENGINE_GEARTOOTH_SENSOR_PIN, primary_geartooth_sensor_callback, InterruptMode::RISING_EDGE); 
+
     // ODrive odrive;
     // odrive.init(TWAI_SENDER_TX_GPIO, TWAI_SENDER_RX_GPIO, TWAI_BITRATE);
     // odrive.start();

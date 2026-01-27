@@ -1,10 +1,10 @@
 #include "sensors/gear_tooth_sensor.h"
-#include "esp_cpu.h"
+#include "esp_timer.h"
 #include "constants.h"
 
 /* Update sensor count and time values. */
 void GearToothSensor::update_isr() {
-    uint64_t cur_time_us = esp_cpu_get_cycle_count() * 1000000ULL / CPU_HZ;
+    uint64_t cur_time_us = esp_timer_get_time();
     
     if (cur_time_us - last_time_us > min_time_diff_us) 
     {
