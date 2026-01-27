@@ -10,8 +10,13 @@ public:
     void isr_update_inbound();
     void end();
 
-    bool is_outbound_engaged();
-    bool is_inbound_engaged();
+    bool is_outbound_engaged(){
+        return disengage_pressed;
+    }
+
+    bool is_inbound_engaged(){
+        return engage_pressed;
+    }
 
 private:
     bool centerlock_limit_switch_activated;

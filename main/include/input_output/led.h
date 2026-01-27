@@ -2,22 +2,38 @@
 #define LED_H
 
 #include <vector>
+#include "gpio_wrapper.h"
+
 using std::vector;
 
 class LED {
 public:
     LED (vector<int> pins) {
-        pins = pins;
+        this->pins = pins;
     }
-    void write_pin(bool state);
-    void pin_mode(int mode);
-    void set_flash_time(int time);
 
-    void turn_on_all();
-    void turn_off_all();
+    void set_flash_time(int time){
+        flash_time = time;
+    }
 
-    void turn_on_led(int led_pin);
-    void turn_off_led(int led_pin);
+    void turn_on_all(){
+        for (int pin : pins){
+            digitalWrite(pin, HIGH);
+        }
+    }
+
+    void turn_off_all(){
+        for (int pin : pins){
+            digitalWrite(pin, LOW);
+        }
+    }
+
+    void turn_on_led(int led_pin){
+        digitalWrite(led_pin, HIGH);
+    }
+    void turn_off_led(int led_pin){
+        digitalWrite(led_pin, LOW);
+    }
 
 private:
     vector<int> pins;

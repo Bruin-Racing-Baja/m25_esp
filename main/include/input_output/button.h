@@ -5,8 +5,12 @@ class Button {
 public:
     Button() {}
 
-    bool press_triggered();
-    bool release_triggered();
+    bool press_triggered(){
+        return button_pressed && !last_state;
+    }
+    bool release_triggered(){
+        return !button_pressed && last_state;
+    }
 
 private:
     int pin;
