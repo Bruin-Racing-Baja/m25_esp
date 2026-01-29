@@ -5,18 +5,21 @@
 
 class ShiftRegister {
 public:
-    ShiftRegister(int _ser_in_pin, int _srck_pin, int _rck_pin);
+    ShiftRegister(uint32_t ser_in_pin_, 
+                  uint32_t shift_reg_clk_pin_, 
+                  uint32_t reg_clk_pin_);
     
-    void write_byte(uint8_t byte); 
-    void write_led(uint8_int led_num, bool value); 
+    void write_byte(uint8_t byte);
+    bool write_led(uint8_t led_num, bool value);
 
-    uint8_t get_data() const {return data;}
+    uint8_t get_data() const {return data;} 
     
 private:
-    int ser_in_pin;   // serial input
-    int srck_pin;     // shift register clock
-    int rck_pin;      // register clock (activates latch)
-    uint8_t data; //current data on shift register (default 0)
+    const uint32_t SER_IN_PIN;             // serial input
+    const uint32_t SHIFT_REG_CLK_PIN;      // shift register clock
+    const uint32_t REG_CLK_PIN;            // register clock (activates latch)
+    
+    uint8_t data;                    // current data on shift register (default 0) // essentially current state
 };
 
 #endif // SHIFT_REGISTER_H
