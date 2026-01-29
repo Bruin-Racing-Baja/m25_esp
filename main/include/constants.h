@@ -14,4 +14,7 @@ constexpr float INCHES_PER_MM = 1 / MM_PER_INCH; /* inch / mm */
 constexpr float FEET_PER_MILE = 5280.0; /* feet / mile */
 constexpr float INCH_PER_FEET = 12.0;   /* inch / feet */
 
+constexpr int CENTERLOCK_LIMIT_SWITCH_INBOUND_PIN = 8;
+constexpr int CENTERLOCK_LIMIT_SWITCH_OUTBOUND_PIN = 18;
+
 #endif // CONSTANTS_H

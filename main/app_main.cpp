@@ -9,6 +9,11 @@
 #include "esp_twai_onchip.h"
 #include "driver/gpio.h"
 #include <odrive.h>
+
+#include <input_output/button.h>
+#include <input_output/led.h>
+#include <input_output/centerlock_limit_switch.h>
+
 #define TWAI_SENDER_TX_GPIO     GPIO_NUM_5
 #define TWAI_SENDER_RX_GPIO     GPIO_NUM_4
 #define TWAI_QUEUE_DEPTH        10

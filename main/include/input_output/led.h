@@ -8,21 +8,14 @@ using std::vector;
 
 class LED {
 public:
-    LED (vector<int> pins) {
-        this->pins = pins;
-    }
+    LED (vector<int> pins) : pins(pins), led_state(pins.size(), false) {}
 
-    void set_flash_time(int time){
-        flash_time = time;
-    }
-
-    void turn_on_all(){
+    void turn_on_all_leds(){
         for (int pin : pins){
             digitalWrite(pin, HIGH);
         }
     }
-
-    void turn_off_all(){
+    void turn_off_all_leds(){
         for (int pin : pins){
             digitalWrite(pin, LOW);
         }
@@ -38,8 +31,7 @@ public:
 private:
     vector<int> pins;
 
-    bool led_state;
-    int flash_time;
+    vector<bool> led_state;
 };
 
 #endif // LED_H

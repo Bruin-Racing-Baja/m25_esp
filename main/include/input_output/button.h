@@ -3,13 +3,20 @@
 
 class Button {
 public:
-    Button() {}
+    Button(int pin) : pin(pin), button_pressed(false), last_state(false){}
 
-    bool press_triggered(){
+    bool button_pressed_isr(){
         return button_pressed && !last_state;
     }
-    bool release_triggered(){
+    bool button_released_isr(){
         return !button_pressed && last_state;
+    }
+
+    bool read_button_state(){
+        return button_pressed;
+    }
+    bool read_last_state(){
+        return last_state;
     }
 
 private:
