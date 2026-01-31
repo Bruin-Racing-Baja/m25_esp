@@ -47,25 +47,6 @@ static IRAM_ATTR bool twai_sender_on_error_callback(twai_node_handle_t handle, c
 
 extern "C" void app_main(void)
 {
-    pinMode(47, PinMode::INPUT_ONLY);
-    pinMode(48, PinMode::INPUT_ONLY);
-
-    ShiftRegister sr(SR_SER_IN_PIN, SR_SHIFT_REG_CLK_PIN, SR_REG_CLK_PIN);
-
-    // sr.write_led(4, true);
-
-    while (true) {
-        sr.write_led(1, true);
-        vTaskDelay(pdMS_TO_TICKS(500));
-        sr.write_led(1, false);
-        vTaskDelay(pdMS_TO_TICKS(500));
-    }
-    // for (int i = 0; i < 8; i++) 
-    // {
-    //     (sr.write_byte(1<<i));
-    // }
-    ESP_EARLY_LOGW(TAG, "Turned on all LEDs");
-
     // ODrive odrive;
     // odrive.init(TWAI_SENDER_TX_GPIO, TWAI_SENDER_RX_GPIO, TWAI_BITRATE);
     // odrive.start();
