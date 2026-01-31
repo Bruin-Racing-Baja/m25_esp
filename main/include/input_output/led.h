@@ -3,12 +3,23 @@
 
 #include <vector>
 #include "gpio_wrapper.h"
+#include "freertos/FreeRTOS.h"
 
 using std::vector;
 
 class LED {
 public:
-    LED (vector<int> pins) : pins(pins), led_state(pins.size(), false) {}
+    LED (vector<int> pins) : pins(pins), led_state(pins.size(), false) 
+    {
+        for (int pin : pins) {
+            pinMode(pin, PinMode::OUTPUT_ONLY);
+            
+            /* Blink LED on Startup */
+            digitalWrite(pin, HIGH); 
+            vTaskDelay(pdMS_TO_TICKS(500));
+            digitalWrite(pin, LOW); 
+        }
+    }
 
     void turn_on_all_leds(){
         for (int pin : pins){
