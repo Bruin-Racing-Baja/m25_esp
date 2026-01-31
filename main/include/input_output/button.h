@@ -1,15 +1,19 @@
 #ifndef BUTTON_H
 #define BUTTON_H
 
+#include "gpio_wrapper.h"
 class Button {
 public:
-    Button(int pin) : pin(pin), button_pressed(false), last_state(false){}
-
-    bool button_pressed_isr(){
-        return button_pressed && !last_state;
+    Button(int pin) : pin(pin), button_pressed(false), last_state(false){
+        pinMode(pin, PinMode::INPUT_PULLUP);
     }
-    bool button_released_isr(){
-        return !button_pressed && last_state;
+
+    void button_isr(){
+        if (!digitalRead(pin)) {
+            button_pressed = true;
+        } else {
+            button_pressed = false;
+        }
     }
 
     bool read_button_state(){

@@ -17,7 +17,12 @@ constexpr float INCH_PER_FEET = 12.0;   /* inch / feet */
 constexpr int CENTERLOCK_LIMIT_SWITCH_INBOUND_PIN = 8;
 constexpr int CENTERLOCK_LIMIT_SWITCH_OUTBOUND_PIN = 18;
 
+constexpr int CONTROLS_BUTTON_4_PIN = 2;
+
 /* DAQ Pinouts */
 constexpr int DAQ_LED_1_PIN = 21; 
+
+constexpr int DAQ_BUTTON_A_PIN = 5;
+constexpr int DAQ_BUTTON_B_PIN = 4;
 
 #endif // CONSTANTS_H
