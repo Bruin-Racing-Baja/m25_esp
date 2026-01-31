@@ -28,7 +28,8 @@
 static const char *TAG = "twai_sender";
 
 /* Globally Defined For Now */
-GearToothSensor primary_gts(ENGINE_SAMPLE_WINDOW, ENGINE_COUNTS_PER_ROT); 
+GearToothSensor secondary_gts(GEARBOX_GEARTOOTH_SENSOR_PIN, GEAR_SAMPLE_WINDOW, GEAR_COUNTS_PER_ROT); 
+GearToothSensor primary_gts(ENGINE_GEARTOOTH_SENSOR_PIN, ENGINE_SAMPLE_WINDOW, ENGINE_COUNTS_PER_ROT); 
 
 typedef struct {
     twai_frame_t frame;
@@ -52,12 +53,17 @@ static IRAM_ATTR bool twai_sender_on_error_callback(twai_node_handle_t handle, c
 }
 
 static void IRAM_ATTR primary_geartooth_sensor_callback(void * params) {
-    primary_gts.update_isr(); 
+    primary_gts.update_isr();
+}
+
+static void IRAM_ATTR secondary_geartooth_sensor_callback(void * params) {
+    secondary_gts.update_isr(); 
 }
 
 extern "C" void app_main(void)
 {
-    attachInterrupt(ENGINE_GEARTOOTH_SENSOR_PIN, primary_geartooth_sensor_callback, InterruptMode::RISING_EDGE); 
+    attachInterrupt(primary_gts.get_pin(), primary_geartooth_sensor_callback, InterruptMode::RISING_EDGE);    
+    attachInterrupt(secondary_gts.get_pin(), secondary_geartooth_sensor_callback, InterruptMode::RISING_EDGE);
 
     // ODrive odrive;
     // odrive.init(TWAI_SENDER_TX_GPIO, TWAI_SENDER_RX_GPIO, TWAI_BITRATE);
