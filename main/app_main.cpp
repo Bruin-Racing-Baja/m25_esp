@@ -12,6 +12,8 @@
 
 #include <odrive.h>
 #include <sensors/gear_tooth_sensor.h>
+#include <sensors/brake_pot_sensor.h>
+#include <sensors/throt_pot_sensor.h>
 #include <constants.h> 
 #include <gpio_wrapper.h>
 
@@ -52,10 +54,12 @@ static IRAM_ATTR bool twai_sender_on_error_callback(twai_node_handle_t handle, c
     return false; // No task wake required
 }
 
+/* Callback for Primary GTS */
 static void IRAM_ATTR primary_geartooth_sensor_callback(void * params) {
     primary_gts.update_isr();
 }
 
+/* Callback for Secondary GTS */
 static void IRAM_ATTR secondary_geartooth_sensor_callback(void * params) {
     secondary_gts.update_isr(); 
 }

@@ -1,13 +1,12 @@
 #ifndef GEARTOOTH_SENSOR_H
 #define GEARTOOTH_SENSOR_H
 
-#include "sensors/sensor.h"
 #include <stdint.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/portmacro.h"
 #include "gpio_wrapper.h"
 
-class GearToothSensor: public Sensor {
+class GearToothSensor {
 public: 
     GearToothSensor(uint32_t pin_, uint32_t sample_window_, uint32_t counts_per_rot_, uint32_t min_time_diff_us_ = 300): 
         pin(pin_), 
