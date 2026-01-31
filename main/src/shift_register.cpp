@@ -11,6 +11,10 @@ ShiftRegister::ShiftRegister(uint32_t ser_in_pin_,
     REG_CLK_PIN(reg_clk_pin_), 
     data(0) 
 {
+    /* Need this to INPUT_ONLY b/c they are the 1.8V ones */
+    pinMode(47, PinMode::INPUT_ONLY);
+    pinMode(48, PinMode::INPUT_ONLY);
+
     pinMode(SER_IN_PIN, PinMode::OUTPUT_ONLY);
     pinMode(SHIFT_REG_CLK_PIN, PinMode::OUTPUT_ONLY);
     pinMode(REG_CLK_PIN, PinMode::OUTPUT_ONLY);
