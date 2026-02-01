@@ -16,6 +16,7 @@
 #include <sensors/throt_pot_sensor.h>
 #include <constants.h> 
 #include <gpio_wrapper.h>
+#include <input_output/shift_register.h>
 
 #define TWAI_SENDER_TX_GPIO     GPIO_NUM_5
 #define TWAI_SENDER_RX_GPIO     GPIO_NUM_4

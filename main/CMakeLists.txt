@@ -6,6 +6,7 @@ idf_component_register(
         "src/odrive.cpp"
         "src/gpio_wrapper.cpp"
         "src/sensors/gear_tooth_sensor.cpp" 
+        "src/shift_register.cpp"
         "app_main.cpp"
 
     INCLUDE_DIRS 

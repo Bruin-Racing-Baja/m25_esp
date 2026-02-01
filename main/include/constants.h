@@ -2,6 +2,8 @@
 #define CONSTANTS_H
 #include <stdint.h>
 
+#include <cstdint>
+
 /* Units */
 constexpr float SECONDS_PER_MINUTE = 60.0; /* s / min */
 constexpr float MS_PER_SECOND = 1.0e3;     /* ms / s */ 
@@ -25,5 +27,9 @@ constexpr float GEAR_COUNTS_PER_ROT = 6;    // count / rot
 // Electronics Pins 
 constexpr uint32_t ENGINE_GEARTOOTH_SENSOR_PIN = 17;
 constexpr uint32_t GEARBOX_GEARTOOTH_SENSOR_PIN = 16;
+
+constexpr uint32_t SR_SER_IN_PIN = 21;  // serin 
+constexpr uint32_t SR_SHIFT_REG_CLK_PIN = 45; // srck
+constexpr uint32_t SR_REG_CLK_PIN = 46; // rck
 
 #endif // CONSTANTS_H
