@@ -1,5 +1,6 @@
 #ifndef CONSTANTS_H
 #define CONSTANTS_H
+#include <stdint.h>
 
 #include <cstdint>
 
@@ -16,7 +17,16 @@ constexpr float INCHES_PER_MM = 1 / MM_PER_INCH; /* inch / mm */
 constexpr float FEET_PER_MILE = 5280.0; /* feet / mile */
 constexpr float INCH_PER_FEET = 12.0;   /* inch / feet */
 
-/* Shift Register Pinout*/
+// Powertrain
+constexpr uint32_t ENGINE_SAMPLE_WINDOW = 4;
+constexpr uint32_t GEAR_SAMPLE_WINDOW = 10;
+
+constexpr float ENGINE_COUNTS_PER_ROT = 16; // count / rot
+constexpr float GEAR_COUNTS_PER_ROT = 6;    // count / rot
+
+// Electronics Pins 
+constexpr uint32_t ENGINE_GEARTOOTH_SENSOR_PIN = 17;
+constexpr uint32_t GEARBOX_GEARTOOTH_SENSOR_PIN = 16;
 
 constexpr uint32_t SR_SER_IN_PIN = 21;  // serin 
 constexpr uint32_t SR_SHIFT_REG_CLK_PIN = 45; // srck

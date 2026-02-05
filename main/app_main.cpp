@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/param.h>
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "esp_log.h"
@@ -8,9 +9,14 @@
 #include "esp_twai.h"
 #include "esp_twai_onchip.h"
 #include "driver/gpio.h"
+
 #include <odrive.h>
-#include <input_output/shift_register.h>
+#include <sensors/gear_tooth_sensor.h>
+#include <sensors/brake_pot_sensor.h>
+#include <sensors/throt_pot_sensor.h>
 #include <constants.h> 
+#include <gpio_wrapper.h>
+#include <input_output/shift_register.h>
 
 #define TWAI_SENDER_TX_GPIO     GPIO_NUM_5
 #define TWAI_SENDER_RX_GPIO     GPIO_NUM_4
@@ -23,6 +29,10 @@
 #define TWAI_DATA_LEN           1000
 
 static const char *TAG = "twai_sender";
+
+/* Globally Defined For Now */
+GearToothSensor secondary_gts(GEARBOX_GEARTOOTH_SENSOR_PIN, GEAR_SAMPLE_WINDOW, GEAR_COUNTS_PER_ROT); 
+GearToothSensor primary_gts(ENGINE_GEARTOOTH_SENSOR_PIN, ENGINE_SAMPLE_WINDOW, ENGINE_COUNTS_PER_ROT); 
 
 typedef struct {
     twai_frame_t frame;
@@ -45,8 +55,21 @@ static IRAM_ATTR bool twai_sender_on_error_callback(twai_node_handle_t handle, c
     return false; // No task wake required
 }
 
+/* Callback for Primary GTS */
+static void IRAM_ATTR primary_geartooth_sensor_callback(void * params) {
+    primary_gts.update_isr();
+}
+
+/* Callback for Secondary GTS */
+static void IRAM_ATTR secondary_geartooth_sensor_callback(void * params) {
+    secondary_gts.update_isr(); 
+}
+
 extern "C" void app_main(void)
 {
+    attachInterrupt(primary_gts.get_pin(), primary_geartooth_sensor_callback, InterruptMode::RISING_EDGE);    
+    attachInterrupt(secondary_gts.get_pin(), secondary_geartooth_sensor_callback, InterruptMode::RISING_EDGE);
+
     // ODrive odrive;
     // odrive.init(TWAI_SENDER_TX_GPIO, TWAI_SENDER_RX_GPIO, TWAI_BITRATE);
     // odrive.start();
