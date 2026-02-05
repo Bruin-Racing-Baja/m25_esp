@@ -1,5 +1,6 @@
 #include "odrive.h"
 #include "esp_log.h"
+#include "esp_timer.h"
 #include <string.h>
 
 static const char* TAG = "ODrive";
@@ -361,6 +362,10 @@ void ODrive::request_temperature(uint8_t node_id)
 {
     uint32_t can_id = build_can_id(node_id, CAN_GET_TEMPERATURE);
     send_can_msg(can_id, nullptr, 0);
+}
+
+uint32_t ODrive::get_time_since_last_heartbeat() {
+    return esp_timer_get_time() - last_heartbeat_us;
 }
 
 void ODrive::set_heartbeat_callback(odrive_heartbeat_cb_t cb, void* ctx)
