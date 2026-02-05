@@ -32,10 +32,18 @@ constexpr uint32_t SR_SER_IN_PIN = 21;  // serin
 constexpr uint32_t SR_SHIFT_REG_CLK_PIN = 45; // srck
 constexpr uint32_t SR_REG_CLK_PIN = 46; // rck
 
-constexpr int CENTERLOCK_LIMIT_SWITCH_INBOUND_PIN = 8;
-constexpr int CENTERLOCK_LIMIT_SWITCH_OUTBOUND_PIN = 18;
+constexpr gpio_num_t ECVT_LIMIT_SWITCH_INBOUND_PIN = GPIO_NUM_12; 
+constexpr gpio_num_t ECVT_LIMIT_SWITCH_OUTBOUND_PIN = GPIO_NUM_10; 
+constexpr gpio_num_t ECVT_LIMIT_SWITCH_ENGAGE_PIN = GPIO_NUM_11; /* Not used */
 
-constexpr int CONTROLS_BUTTON_4_PIN = 2;
+constexpr uint32_t CENTERLOCK_LIMIT_SWITCH_INBOUND_PIN = 8;
+constexpr uint32_t CENTERLOCK_LIMIT_SWITCH_OUTBOUND_PIN = 18;
+
+constexpr uint32_t CONTROLS_BUTTON_4_PIN = 2;
+
+constexpr gpio_num_t CAN_TX_PIN = GPIO_NUM_5;
+constexpr gpio_num_t CAN_RX_PIN = GPIO_NUM_4; 
+constexpr uint32_t CAN_BITRATE = 250000;
 
 /* DAQ Pinouts */
 constexpr int DAQ_LED_1_PIN = 21; 
