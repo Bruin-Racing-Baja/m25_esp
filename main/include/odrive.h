@@ -108,10 +108,6 @@ public:
     bool start();
     void stop();
 
-    
-
-
-
     // Command functions
     void set_axis_state(uint8_t node_id, odrive_axis_state_t state);
     void set_controller_mode(uint8_t node_id, odrive_control_mode_t ctrl_mode, odrive_input_mode_t input_mode);
@@ -131,6 +127,9 @@ public:
     void request_iq(uint8_t node_id);
     void request_bus_voltage_current(uint8_t node_id);
     void request_temperature(uint8_t node_id);
+
+    // Getter functions 
+    uint32_t get_time_since_last_heartbeat(); 
 
     // Callback registration
     void set_heartbeat_callback(odrive_heartbeat_cb_t cb, void* ctx);
@@ -161,6 +160,9 @@ private:
     void parse_encoder_estimates(uint8_t node_id, const uint8_t* data, uint8_t len);
     void parse_iq(uint8_t node_id, const uint8_t* data, uint8_t len);
 
+    // Heartbeat 
+    uint64_t last_heartbeat_us;
+    
     // Configuration
     gpio_num_t tx_pin_;
     gpio_num_t rx_pin_;
