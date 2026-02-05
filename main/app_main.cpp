@@ -38,6 +38,7 @@ static const char *TAG = "twai_sender";
 /* Globally Defined For Now */
 GearToothSensor secondary_gts(GEARBOX_GEARTOOTH_SENSOR_PIN, GEAR_SAMPLE_WINDOW, GEAR_COUNTS_PER_ROT); 
 GearToothSensor primary_gts(ENGINE_GEARTOOTH_SENSOR_PIN, ENGINE_SAMPLE_WINDOW, ENGINE_COUNTS_PER_ROT); 
+CenterlockLimitSwitch centerlock_ls(CENTERLOCK_LIMIT_SWITCH_OUTBOUND_PIN, CENTERLOCK_LIMIT_SWITCH_INBOUND_PIN); 
 
 typedef struct {
     twai_frame_t frame;
@@ -70,11 +71,24 @@ static void IRAM_ATTR secondary_geartooth_sensor_callback(void * params) {
     secondary_gts.update_isr(); 
 }
 
+/* Callback for Centerlock Outbound */
+static void IRAM_ATTR centerlock_ls_outbound_callback(void * params) {
+    centerlock_ls.update_isr_outbound();
+}
+
+/* Callback for Centerlock Inbound */
+static void IRAM_ATTR centerlock_ls_inbound_callback(void * params) {
+    centerlock_ls.update_isr_inbound(); 
+}
+
 extern "C" void app_main(void)
 {
     attachInterrupt(primary_gts.get_pin(), primary_geartooth_sensor_callback, InterruptMode::RISING_EDGE);    
     attachInterrupt(secondary_gts.get_pin(), secondary_geartooth_sensor_callback, InterruptMode::RISING_EDGE);
 
+    attachInterrupt(centerlock_ls.get_out_pin(), centerlock_ls_outbound_callback, InterruptMode::ANY_CHANGE); 
+    attachInterrupt(centerlock_ls.get_in_pin(), centerlock_ls_inbound_callback, InterruptMode::ANY_CHANGE); 
+    
     // ODrive odrive;
     // odrive.init(TWAI_SENDER_TX_GPIO, TWAI_SENDER_RX_GPIO, TWAI_BITRATE);
     // odrive.start();
