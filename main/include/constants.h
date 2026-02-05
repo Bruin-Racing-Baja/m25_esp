@@ -32,4 +32,15 @@ constexpr uint32_t SR_SER_IN_PIN = 21;  // serin
 constexpr uint32_t SR_SHIFT_REG_CLK_PIN = 45; // srck
 constexpr uint32_t SR_REG_CLK_PIN = 46; // rck
 
+constexpr int CENTERLOCK_LIMIT_SWITCH_INBOUND_PIN = 8;
+constexpr int CENTERLOCK_LIMIT_SWITCH_OUTBOUND_PIN = 18;
+
+constexpr int CONTROLS_BUTTON_4_PIN = 2;
+
+/* DAQ Pinouts */
+constexpr int DAQ_LED_1_PIN = 21; 
+
+constexpr int DAQ_BUTTON_A_PIN = 5;
+constexpr int DAQ_BUTTON_B_PIN = 4;
+
 #endif // CONSTANTS_H
