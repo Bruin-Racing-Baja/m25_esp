@@ -1,24 +1,27 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/param.h>
-#include <vector>
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
-#include "freertos/task.h"
 #include "esp_log.h"
 #include "esp_timer.h"
 #include "esp_twai.h"
 #include "esp_twai_onchip.h"
 #include "driver/gpio.h"
-#include <odrive.h>
-#include <gpio_wrapper.h>
-#include <constants.h>
 
+#include <constants.h> 
+#include <gpio_wrapper.h>
+#include <odrive.h>
+
+#include <sensors/gear_tooth_sensor.h>
+#include <sensors/brake_pot_sensor.h>
+#include <sensors/throt_pot_sensor.h>
+
+#include <input_output/shift_register.h>
+#include <input_output/centerlock_limit_switch.h>
 #include <input_output/button.h>
 #include <input_output/led.h>
-#include <input_output/centerlock_limit_switch.h>
-
-using std::vector;
 
 #define TWAI_SENDER_TX_GPIO     GPIO_NUM_5
 #define TWAI_SENDER_RX_GPIO     GPIO_NUM_4
@@ -32,13 +35,14 @@ using std::vector;
 
 static const char *TAG = "twai_sender";
 
+/* Globally Defined For Now */
+GearToothSensor secondary_gts(GEARBOX_GEARTOOTH_SENSOR_PIN, GEAR_SAMPLE_WINDOW, GEAR_COUNTS_PER_ROT); 
+GearToothSensor primary_gts(ENGINE_GEARTOOTH_SENSOR_PIN, ENGINE_SAMPLE_WINDOW, ENGINE_COUNTS_PER_ROT); 
+
 typedef struct {
     twai_frame_t frame;
     uint8_t data[TWAI_FRAME_MAX_LEN];
 } twai_sender_data_t;
-
-Button button_a(DAQ_BUTTON_A_PIN);
-Button button_b(CONTROLS_BUTTON_4_PIN);
 
 // Transmission completion callback
 static IRAM_ATTR bool twai_sender_tx_done_callback(twai_node_handle_t handle, const twai_tx_done_event_data_t *edata, void *user_ctx)
@@ -56,28 +60,27 @@ static IRAM_ATTR bool twai_sender_on_error_callback(twai_node_handle_t handle, c
     return false; // No task wake required
 }
 
-static IRAM_ATTR void button_a_callback(void * params)
-{
-    button_a.button_isr();
-    ESP_EARLY_LOGW(TAG, "Button A state: %d", button_a.read_button_state());
+/* Callback for Primary GTS */
+static void IRAM_ATTR primary_geartooth_sensor_callback(void * params) {
+    primary_gts.update_isr();
 }
 
-
-static IRAM_ATTR void button_b_callback(void * params)
-{
-    button_b.button_isr();
+/* Callback for Secondary GTS */
+static void IRAM_ATTR secondary_geartooth_sensor_callback(void * params) {
+    secondary_gts.update_isr(); 
 }
-
 
 extern "C" void app_main(void)
-{    
-    vector<int> led_pins = {DAQ_LED_1_PIN};
-    LED daq_leds(led_pins);
+{
+    attachInterrupt(primary_gts.get_pin(), primary_geartooth_sensor_callback, InterruptMode::RISING_EDGE);    
+    attachInterrupt(secondary_gts.get_pin(), secondary_geartooth_sensor_callback, InterruptMode::RISING_EDGE);
 
-    attachInterrupt(CONTROLS_BUTTON_4_PIN, button_b_callback, InterruptMode::LOW_LEVEL);
-
-    while (true) {
-        vTaskDelay(pdMS_TO_TICKS(1000));
-        ESP_EARLY_LOGW(TAG, "C: %d\n", digitalRead(CONTROLS_BUTTON_4_PIN));
-    }
+    // ODrive odrive;
+    // odrive.init(TWAI_SENDER_TX_GPIO, TWAI_SENDER_RX_GPIO, TWAI_BITRATE);
+    // odrive.start();
+    // odrive.clear_errors(0);
+    // while(true)
+    // {
+    //     vTaskDelay(pdMS_TO_TICKS(100));
+    // }
 }
