@@ -15,7 +15,7 @@ ECVTController::ECVTController(ShiftRegister* sr, bool wait_for_can)
       control_cycle_count(0),
       last_engine_rpm_error(0),
       actuator_engage_position(0),
-      error_k_1(0.f),
+      error_k_1(0.0f),
       error_k_2(0.0f),
       velocity_command_k_1(0.0f)
 {
