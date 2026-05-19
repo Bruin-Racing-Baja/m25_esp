@@ -46,6 +46,10 @@ private:
     float last_engine_rpm_error;
     float actuator_engage_position;
 
+    float error_k_1;
+    float error_k_2;
+    float velocity_command_k_1;
+
     TaskHandle_t taskHandle;
     esp_timer_handle_t timerHandle;
    

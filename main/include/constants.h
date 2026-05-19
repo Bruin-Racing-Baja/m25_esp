@@ -32,6 +32,13 @@ constexpr float ACTUATOR_KP = 0.01f;
 constexpr float ACTUATOR_KI = 0.000f;   
 constexpr float ACTUATOR_KD = 0.004f;
 
+/* Bilinear transoformed coefficients
+    fits the difference equqation u[k]=u[k−1]+a0​e[k]+a1​e[k−1]+a2​e[k−2]*/
+constexpr float ACTUATOR_TS = CONTROL_FUNCTION_INTERVAL_MS / 1000.0f;
+constexpr float ACTUATOR_A0 = ACTUATOR_KP + (ACTUATOR_KI * ACTUATOR_TS * 0.5f) + (ACTUATOR_KD / ACTUATOR_TS);
+constexpr float ACTUATOR_A1 = -ACTUATOR_KP + (ACTUATOR_KI * ACTUATOR_TS * 0.5f) - (2.0f * ACTUATOR_KD / ACTUATOR_TS);
+constexpr float ACTUATOR_A2 = ACTUATOR_KD / ACTUATOR_TS;
+
 constexpr float ECVT_TARGET_RPM = 3000.0f;
 constexpr float ACTUATOR_INBOUND_THRESHOLD = 8.0f;
 
