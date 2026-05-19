@@ -49,6 +49,7 @@ private:
     float error_k_1;
     float error_k_2;
     float velocity_command_k_1;
+    float velocity_command_k_2;
 
     TaskHandle_t taskHandle;
     esp_timer_handle_t timerHandle;

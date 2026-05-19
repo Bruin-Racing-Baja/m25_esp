@@ -17,7 +17,8 @@ ECVTController::ECVTController(ShiftRegister* sr, bool wait_for_can)
       actuator_engage_position(0),
       error_k_1(0.0f),
       error_k_2(0.0f),
-      velocity_command_k_1(0.0f)
+      velocity_command_k_1(0.0f),
+      velocity_command_k_2(0.0f)
 {
     instance = this; 
 }
@@ -156,24 +157,20 @@ void ECVTController::control_loop()
 
         /* difference equation of bilinear approximation of continuous PID  */
         float velocity_command =
-            velocity_command_k_1
+            velocity_command_k_2
             + ACTUATOR_A0 * filtered_engine_rpm_error
             + ACTUATOR_A1 * error_k_1
             + ACTUATOR_A2 * error_k_2;
 
         /* clamp within velocity limits */
-        velocity_command =
-            CLAMP(
-                velocity_command,
-                -VELOCITY_LIMIT,
-                VELOCITY_LIMIT
-            );
+        velocity_command = CLAMP(velocity_command, -VELOCITY_LIMIT, VELOCITY_LIMIT);
 
         /* update controller state */
         error_k_2 = error_k_1;
         error_k_1 = filtered_engine_rpm_error;
+        velocity_command_k_2 = velocity_command_k_1;
         velocity_command_k_1 = velocity_command;
-        
+
         odrive.set_axis_state(AXIS_STATE_CLOSED_LOOP_CONTROL);
         odrive.set_controller_mode(CTRL_MODE_VELOCITY_CONTROL, INPUT_MODE_PASSTHROUGH);
 
