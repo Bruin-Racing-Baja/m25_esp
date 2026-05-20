@@ -91,9 +91,9 @@ void GPS::update() {
             parse_rmc(buffer);
     }
 
-    static int count = 0;
-    if (++count % 100 == 0) {
-        printf("GPS: fix=%d lat=%.6f lon=%.6f speed=%.2f\n",
-               has_fix, latitude, longitude, speed_mps);
-    }
+    // static int count = 0;
+    // if (++count % 100 == 0) {
+    //     printf("GPS: fix=%d lat=%.6f lon=%.6f speed=%.2f\n",
+    //            has_fix, latitude, longitude, speed_mps);
+    // }
 }

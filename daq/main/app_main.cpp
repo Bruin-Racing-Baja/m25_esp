@@ -11,6 +11,7 @@
 #include "sensors/shock_pot_sensor.h"
 #include "sensors/gps_sensor.h"
 #include "sensors/brake_pressure_sensor.h"
+#include "sensors/imu_sensor.h"
 
 #include "BNO08x.hpp"
 
@@ -26,10 +27,10 @@ BrakePressureSensor brake_pressure_back(BRAKE_PRESSURE_BACK_SENSOR_PIN, 5000.0f)
 GPS gps(GPS_TX_PIN, GPS_RX_PIN);
 
 //imu sensor
-// IMUSensor imu(IMU_MOSI_PIN, IMU_MISO_PIN, IMU_SCK_PIN,
-//               IMU_CS_PIN, IMU_INT_PIN, IMU_RST_PIN);
-static BNO08x* imu = nullptr;
-static volatile float imu_ax = 0, imu_ay = 0, imu_az = 0;
+IMUSensor imu;
+
+// static BNO08x* imu = nullptr;
+// static volatile float imu_ax = 0, imu_ay = 0, imu_az = 0;
 
 // DAQ task and timer handles
 static TaskHandle_t daq_task_handle = nullptr;
@@ -43,19 +44,24 @@ static void daq_timer_callback(void* arg) {
 }
 
 // IMU
-static void imu_task(void* pvParameters) {
-    while (true) {
-        if (imu->data_available()) {
-            if (imu->rpt.accelerometer.has_new_data()) {
-                bno08x_accel_t accel = imu->rpt.accelerometer.get();
-                imu_ax = accel.x;
-                imu_ay = accel.y;
-                imu_az = accel.z;
-            }
-        }
-    }
-}
-
+// static void imu_task(void* pvParameters) {
+//     while (true) {
+//         if (imu->data_available()) {
+//             if (imu->rpt.accelerometer.has_new_data()) {
+//                 bno08x_accel_t accel = imu->rpt.accelerometer.get();
+//                 imu_ax = accel.x;
+//                 imu_ay = accel.y;
+//                 imu_az = accel.z;
+//             }
+//         }
+//     }
+// }
+// static void imu_task(void* pvParameters) {
+//     while (true) {
+//         imu.update();  // blocks on data_available() without affecting daq_task
+//         vTaskDelay(pdMS_TO_TICKS(5));
+//     }
+// }
 // DAQ task: waits for timer notification, reads shock sensor data, updates telemetry buffers
 static void daq_task(void* pvParameters) {
     while (true) {
@@ -63,18 +69,18 @@ static void daq_task(void* pvParameters) {
 
         shock_rear_left.update();
         shock_rear_right.update();
-        brake_pressure_front.update();
-        brake_pressure_back.update();
+        // brake_pressure_front.update();
+        // brake_pressure_back.update();
 
-        gps.update();
+        //gps.update();
         
-        static int print_count = 0;
-        if (++print_count >= 50) {
-            printf("ax=%.2f ay=%.2f az=%.2f\n", imu_ax, imu_ay, imu_az);
-            print_count = 0;
-        }
+        // static int print_count = 0;
+        // if (++print_count >= 50) {
+        //     ESP_LOGI(TAG, "ax=%.2f ay=%.2f az=%.2f", imu_ax, imu_ay, imu_az);
+        //     print_count = 0;
+        // }
 
-        //imu.update();
+        imu.update();
         // vTaskDelay(pdMS_TO_TICKS(1000)); // 1 second
         // printf("Latitude: %f, Longitude: %f, Speed: %f, Has fix: %f\n", 
         //     gps.get_latitude(), gps.get_longitude(), gps.get_speed_mps(), gps.get_has_fix());
@@ -131,29 +137,17 @@ extern "C" void app_main(void)
 
     vTaskDelay(pdMS_TO_TICKS(500));
 
-    // imu.init();
-    bno08x_config_t imu_config;
-    imu_config.io_mosi = (gpio_num_t)IMU_MOSI_PIN;
-    imu_config.io_miso = (gpio_num_t)IMU_MISO_PIN;
-    imu_config.io_sclk = (gpio_num_t)IMU_SCK_PIN;
-    imu_config.io_cs   = (gpio_num_t)IMU_CS_PIN;
-    imu_config.io_int  = (gpio_num_t)IMU_INT_PIN;
-    imu_config.io_rst  = (gpio_num_t)IMU_RST_PIN;
-    static BNO08x imu_instance(imu_config);
-    imu = &imu_instance;
-    if (!imu->initialize()) {
-        ESP_LOGE(TAG, "IMU init failed");
-    } else {
-        imu->rpt.accelerometer.enable(5000UL);  // 200Hz
-        ESP_LOGI(TAG, "IMU init done");
-    }
-
+    imu.init();
+    
     // printf("IMU init done, has_fix=%d\n", imu.is_ready());
 
     // Telem task and DAQ task creation
-    xTaskCreatePinnedToCore(DaqTelemetry::send_data, "telemetry_task", 8192,  nullptr, tskIDLE_PRIORITY + 5, NULL, 0);
-    xTaskCreatePinnedToCore(daq_task, "daq_task", 4096, nullptr, 10, &daq_task_handle, 0);
-    xTaskCreatePinnedToCore(imu_task,  "imu_task",  4096, nullptr,  9, NULL, 0);
+    //xTaskCreatePinnedToCore(DaqTelemetry::send_data, "telemetry_task", 8192,  nullptr, tskIDLE_PRIORITY + 5, NULL, 0);
+    
+    //xTaskCreatePinnedToCore(imu_task, "imu_task", 4096, nullptr, 9, NULL, 1);
+    xTaskCreatePinnedToCore(daq_task, "daq_task", 8192, nullptr, 5, &daq_task_handle, 0);
+
+    //xTaskCreatePinnedToCore(imu_task,  "imu_task",  4096, nullptr,  9, NULL, 0);
     // DAQ timer setup
     const esp_timer_create_args_t timer_args = {
         .callback = &daq_timer_callback,
