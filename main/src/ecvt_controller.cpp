@@ -32,6 +32,7 @@ void ECVTController::init(bool wait_for_can)
 
     /* Initialize CAN BUS */
     odrive.set_ecvt_odrive();
+    odrive.set_limits(ECVT_ODRIVE_VELOCITY_LIMIT, ECVT_ODRIVE_CURRENT_LIMIT);
     odrive.clear_errors();
 
     /* Wait for CAN Heartbeat - Blinking LEDs */
@@ -155,7 +156,7 @@ void ECVTController::control_loop()
         float velocity_command =
             (engine_rpm_error * ACTUATOR_KP +
             MAX(0, engine_rpm_derror * ACTUATOR_KD));
-        velocity_command = CLAMP(velocity_command, -VELOCITY_LIMIT, VELOCITY_LIMIT);
+        velocity_command = CLAMP(velocity_command, -ECVT_ODRIVE_VELOCITY_LIMIT, ECVT_ODRIVE_VELOCITY_LIMIT);
         
         odrive.set_axis_state(AXIS_STATE_CLOSED_LOOP_CONTROL);
         odrive.set_controller_mode(CTRL_MODE_VELOCITY_CONTROL, INPUT_MODE_PASSTHROUGH);

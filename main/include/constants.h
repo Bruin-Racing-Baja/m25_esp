@@ -12,8 +12,9 @@ constexpr uint8_t ECVT_ODRIVE_NODE_ID = 1;
 constexpr uint8_t CENTERLOCK_ODRIVE_NODE_ID = 3; 
 
 /* Odrive Values */
-constexpr float VELOCITY_LIMIT = 30.0f;
-constexpr float CENTERLOCK_ODRIVE_VEL_LIMIT = 30.0; 
+constexpr float ECVT_ODRIVE_VELOCITY_LIMIT = 30.0f;
+constexpr  float ECVT_ODRIVE_CURRENT_LIMIT = 12.5f; 
+constexpr float CENTERLOCK_ODRIVE_VEL_LIMIT = 30.0f; 
 constexpr float CENTERLOCK_ODRIVE_CURRENT_LIMIT = 5.0; 
 
 /* Electronics */
