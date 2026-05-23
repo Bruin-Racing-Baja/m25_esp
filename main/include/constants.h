@@ -34,7 +34,7 @@ constexpr float ACTUATOR_KI = 0.000f;
 constexpr float ACTUATOR_KD = 0.004f;
 
 constexpr float ECVT_CONTROLLER_INBOUND_VELOCITY_LIMIT = 30.0f; //magnitude
-constexpr float ECVT_CONTROLLER_OUBOUND_VELOCITY_LIMIT = 30.0f; //magnitude
+constexpr float ECVT_CONTROLLER_OUTBOUND_VELOCITY_LIMIT = 30.0f; //magnitude
 
 constexpr float ECVT_TARGET_RPM = 3000.0f;
 constexpr float ACTUATOR_INBOUND_THRESHOLD = 8.0f;
