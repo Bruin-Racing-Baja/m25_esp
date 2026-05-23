@@ -12,8 +12,9 @@ constexpr uint8_t ECVT_ODRIVE_NODE_ID = 1;
 constexpr uint8_t CENTERLOCK_ODRIVE_NODE_ID = 3; 
 
 /* Odrive Values */
-constexpr float VELOCITY_LIMIT = 30.0f;
-constexpr float CENTERLOCK_ODRIVE_VEL_LIMIT = 30.0; 
+constexpr float ECVT_ODRIVE_VELOCITY_LIMIT = 40.0f;
+constexpr  float ECVT_ODRIVE_CURRENT_LIMIT = 12.5f; 
+constexpr float CENTERLOCK_ODRIVE_VEL_LIMIT = 30.0f; 
 constexpr float CENTERLOCK_ODRIVE_CURRENT_LIMIT = 5.0; 
 
 /* Electronics */
@@ -38,6 +39,9 @@ constexpr float CONTROL_TS = CONTROL_FUNCTION_INTERVAL_MS / 1000.0f;
 constexpr float ACTUATOR_A0 = (ACTUATOR_KP + (ACTUATOR_KI * CONTROL_TS / 2.0f) + (2.0f * ACTUATOR_KD / CONTROL_TS));
 constexpr float ACTUATOR_A1 = ((ACTUATOR_KI * CONTROL_TS) - (4.0f * ACTUATOR_KD / CONTROL_TS));
 constexpr float ACTUATOR_A2 = (-ACTUATOR_KP + (ACTUATOR_KI * CONTROL_TS / 2.0f) + (2.0f * ACTUATOR_KD / CONTROL_TS));
+
+constexpr float ECVT_CONTROLLER_INBOUND_VELOCITY_LIMIT = 30.0f; //magnitude
+constexpr float ECVT_CONTROLLER_OUBOUND_VELOCITY_LIMIT = 30.0f; //magnitude
 
 constexpr float ECVT_TARGET_RPM = 3000.0f;
 constexpr float ACTUATOR_INBOUND_THRESHOLD = 8.0f;
