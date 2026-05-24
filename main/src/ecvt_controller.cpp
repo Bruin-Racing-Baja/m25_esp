@@ -165,7 +165,7 @@ void ECVTController::control_loop()
             + ACTUATOR_A2 * error_k_2;
 
         /* clamp within velocity limits (MUST KEEP SEPARATE FROM CONTROLLER!) */
-        float velocity_command = CLAMP(velocity_command, -ECVT_CONTROLLER_OUTBOUND_VELOCITY_LIMIT, ECVT_CONTROLLER_INBOUND_VELOCITY_LIMIT);
+        float velocity_command = CLAMP(velocity_command_k_0, -ECVT_CONTROLLER_OUTBOUND_VELOCITY_LIMIT, ECVT_CONTROLLER_INBOUND_VELOCITY_LIMIT);
 
         /* update controller state */
         error_k_2 = error_k_1;
