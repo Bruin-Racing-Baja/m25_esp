@@ -5,6 +5,7 @@
 #include <macros.h>
 
 static const char *TAG = "twai_sender";
+
 ECVTController* ECVTController::instance = nullptr;
 ECVTController::ECVTController(ShiftRegister* sr, bool wait_for_can)
     : primary_gts(ENGINE_GEARTOOTH_SENSOR_PIN, ENGINE_SAMPLE_WINDOW, ENGINE_COUNTS_PER_ROT), 
@@ -18,7 +19,7 @@ ECVTController::ECVTController(ShiftRegister* sr, bool wait_for_can)
     instance = this; 
 }
 
-void ECVTController::init(bool wait_for_can, Telemetry* telem) 
+void ECVTController::init(bool wait_for_can) 
 {
     if(!instance) {
         ESP_LOGE(TAG, "Instance not set");
@@ -30,8 +31,8 @@ void ECVTController::init(bool wait_for_can, Telemetry* telem)
     pinMode(ECVT_LIMIT_SWITCH_OUTBOUND_PIN, PinMode::INPUT_ONLY);
 
     /* Initialize CAN BUS */
-    odrive.init(CAN_TX_PIN, CAN_RX_PIN, CAN_BITRATE);
-    odrive.start();
+    odrive.set_ecvt_odrive();
+    odrive.set_limits(ECVT_ODRIVE_VELOCITY_LIMIT, ECVT_ODRIVE_CURRENT_LIMIT);
     odrive.clear_errors();
 
     /* Wait for CAN Heartbeat - Blinking LEDs */
@@ -96,7 +97,6 @@ bool ECVTController::home_actuator(uint32_t timeout_ms)
         }
         vTaskDelay(pdMS_TO_TICKS(10));
     }
-    odrive.set_absolute_position(0.0f);
 
     /* Shift in to engaged LS */
     start_time_ms = esp_timer_get_time() / 1e3;
@@ -108,7 +108,9 @@ bool ECVTController::home_actuator(uint32_t timeout_ms)
         }
         vTaskDelay(pdMS_TO_TICKS(10));
     }
-    actuator_engage_position = odrive.get_pos() * ECVT_DIR; 
+    odrive.set_absolute_position(0.0f);
+
+    actuator_engage_position = 0.0f; 
 
     odrive.set_input_vel(0.0);
 
@@ -127,16 +129,19 @@ void ECVTController::control_loop()
     while(true)
     {
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        odrive.request_total_charge_used();
+        odrive.request_total_power_used();
 
         /* Grab sensor data */
         float primary_rpm = primary_gts.get_rpm();
-        float secondary_rpm = secondary_gts.get_rpm();
+        float gearbox_rpm = secondary_gts.get_rpm();
+        float secondary_rpm = gearbox_rpm / GEAR_TO_SECONDARY_RATIO;
         
         /* Filter RPMs */
         float filtered_primary_rpm = engine_rpm_median_filter.update(primary_rpm);
         filtered_primary_rpm = engine_rpm_time_filter.update(filtered_primary_rpm);
 
-        float filtered_secondary_rpm = gear_rpm_time_filter.update(secondary_rpm);
+        float filtered_secondary_rpm = gear_rpm_time_filter.update(gearbox_rpm);
         filtered_secondary_rpm = filtered_secondary_rpm / GEAR_TO_SECONDARY_RATIO;
 
         /* RPM error from target */
@@ -151,7 +156,7 @@ void ECVTController::control_loop()
         float velocity_command =
             (engine_rpm_error * ACTUATOR_KP +
             MAX(0, engine_rpm_derror * ACTUATOR_KD));
-        velocity_command = CLAMP(velocity_command, -VELOCITY_LIMIT, VELOCITY_LIMIT);
+        velocity_command = CLAMP(velocity_command, -ECVT_CONTROLLER_OUTBOUND_VELOCITY_LIMIT, ECVT_CONTROLLER_INBOUND_VELOCITY_LIMIT);
         
         odrive.set_axis_state(AXIS_STATE_CLOSED_LOOP_CONTROL);
         odrive.set_controller_mode(CTRL_MODE_VELOCITY_CONTROL, INPUT_MODE_PASSTHROUGH);
@@ -187,15 +192,21 @@ void ECVTController::control_loop()
         Telemetry::back_buffer->target_rpm = ECVT_TARGET_RPM;
         Telemetry::back_buffer->engine_rpm_error = engine_rpm_error; 
 
-        Telemetry::back_buffer->velocity_command = velocity_command; 
+        Telemetry::back_buffer->ecvt_velocity_command = velocity_command; 
         
         Telemetry::back_buffer->ecvt_velocity = odrive.get_vel() * ECVT_DIR;
         Telemetry::back_buffer->ecvt_pos = odrive.get_pos() * ECVT_DIR;
         Telemetry::back_buffer->ecvt_iq = odrive.get_iq();
 
-        Telemetry::back_buffer->inbound_limit_switch = get_inbound_limit(); 
-        Telemetry::back_buffer->outbound_limit_switch = get_outbound_limit(); 
-        Telemetry::back_buffer->engage_limit_switch = get_engage_limit(); 
+        Telemetry::back_buffer->ecvt_bus_voltage = odrive.get_bus_voltage();
+        Telemetry::back_buffer->ecvt_bus_current = odrive.get_bus_current();
+
+        Telemetry::back_buffer->ecvt_total_charge_used = odrive.get_total_charge_used();
+        Telemetry::back_buffer->ecvt_total_power_used = odrive.get_total_power_used();
+
+        Telemetry::back_buffer->ecvt_inbound_limit_switch = get_inbound_limit(); 
+        Telemetry::back_buffer->ecvt_outbound_limit_switch = get_outbound_limit(); 
+        Telemetry::back_buffer->ecvt_engage_limit_switch = get_engage_limit(); 
         
         Telemetry::back_buffer = Telemetry::front_buffer.exchange(Telemetry::back_buffer);
 

@@ -6,16 +6,14 @@
 #include <input_output/shift_register.h>
 #include "esp_timer.h"
 #include "constants.h"
+#include <telemetry.h>
 
 class CenterlockController {
 public:
-    enum State {
-        UNHOMED,
-        DISENGAGED_2WD,
-        SHIFTING_TO_4WD,
-        ENGAGED_4WD,
-        SHIFTING_TO_2WD,
-        ERROR
+    enum ButtonState {
+        IN,
+        OUT,
+        UNKNOWN
     };
 
     static const uint32_t SET_TORQUE_SUCCESS = 0;
@@ -36,8 +34,6 @@ public:
     bool home(); 
 
     void control_loop(uint32_t timeout_ms);
-    inline void set_state(State new_state) { curr_state = new_state; }
-    inline State get_state(){return curr_state;}
 
     bool get_outbound_limit();
     bool get_inbound_limit(); 
@@ -54,12 +50,13 @@ private:
 
     ODrive odrive;  
 
-    State curr_state;
+    ButtonState state;
     
     gpio_num_t outbound_pin; 
     gpio_num_t inbound_pin; 
 
-    gpio_num_t led; 
+    gpio_num_t led;
+    bool led_state;
 
     TaskHandle_t taskHandle;
     esp_timer_handle_t timerHandle;
