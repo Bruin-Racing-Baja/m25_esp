@@ -1,5 +1,5 @@
-# BAJA M25 ESP
-Bruin Racing Baja M25 Repository
+# CRUX
+CVT Ratio Utility eXecutor - Bruin Racing Baja M25 Repository
 
 ## Install Dependencies
 Install the ESP-IDF Development Environment
