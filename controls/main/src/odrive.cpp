@@ -311,13 +311,14 @@ void ODrive::set_input_torque(float torque)
     send_can_msg(can_id, (uint8_t*)&torque, 4);
 }
 
+
 void ODrive::set_limits(float vel_limit, float current_limit)
 {
     uint32_t can_id = build_can_id(CAN_SET_LIMITS);
     uint8_t data[8];
-    /* SETS VELOCITY HARD LIMIT (ERROR TRIPPING)*/
+    /* SETS HARD (ERROR TRIGGERING) VELOCITY LIMIT */
     memcpy(&data[0], &vel_limit, 4);
-    /* SETS CURRENT SOFT LIMIT (MAX SETPOINT)*/
+    /* SETS CURRENT SOFT MAX (CONTROLLER SETPOINT) LIMIT, NOT ABSOLUTE MAX (ERROR TRIGGERING) CURRENT LIMIT*/
     memcpy(&data[4], &current_limit, 4);
     send_can_msg(can_id, data, 8);
     //ESP_LOGI(TAG, "Set limits: node=%d, vel=%.2f, current=%.2f", vel_limit, current_limit);

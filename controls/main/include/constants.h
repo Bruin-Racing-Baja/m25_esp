@@ -29,9 +29,16 @@ constexpr float CENTERLOCK_DIR = -1.0f;
 constexpr uint32_t CENTERLOCK_BUTTON_DEBOUNCE_MS = 20;
 
 /* ECVT Controller Values */
-constexpr float ACTUATOR_KP = 0.01f;   
+constexpr float ACTUATOR_KP = 0.02f;   
 constexpr float ACTUATOR_KI = 0.000f;   
-constexpr float ACTUATOR_KD = 0.004f;
+constexpr float ACTUATOR_KD = 0.002f;
+
+/* Bilinear transoformed coefficients
+    fits the difference equqation u[k]=u[k−2]+a0​e[k]+a1​e[k−1]+a2​e[k−2]*/
+constexpr float CONTROL_TS = CONTROL_FUNCTION_INTERVAL_MS / 1000.0f;
+constexpr float ACTUATOR_A0 = (ACTUATOR_KP + (ACTUATOR_KI * CONTROL_TS / 2.0f) + (2.0f * ACTUATOR_KD / CONTROL_TS));
+constexpr float ACTUATOR_A1 = ((ACTUATOR_KI * CONTROL_TS) - (4.0f * ACTUATOR_KD / CONTROL_TS));
+constexpr float ACTUATOR_A2 = (-ACTUATOR_KP + (ACTUATOR_KI * CONTROL_TS / 2.0f) + (2.0f * ACTUATOR_KD / CONTROL_TS));
 
 constexpr float ECVT_CONTROLLER_INBOUND_VELOCITY_LIMIT = 30.0f; //magnitude
 constexpr float ECVT_CONTROLLER_OUTBOUND_VELOCITY_LIMIT = 30.0f; //magnitude
