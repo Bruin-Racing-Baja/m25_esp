@@ -90,32 +90,88 @@ bool ECVTController::home_actuator(uint32_t timeout_ms)
     odrive.set_axis_state(AXIS_STATE_CLOSED_LOOP_CONTROL); 
     odrive.set_controller_mode(CTRL_MODE_VELOCITY_CONTROL, INPUT_MODE_PASSTHROUGH);
 
+    bool outbound_hit = false;
+    bool engage_hit = false;
+    float outbound_iq_threshold = 10.0f; //amps
+    float engage_iq_threshold = 10.0f; //amps
+    float engage_position_offset = 0.5; //turns
+    float alpha = 0.10f;  //low pass filter weight
+    uint32_t min_move_cycles = 30; //ignore the first few cycles to avoid false triggering on inital motor accel
+
+    float filtered_iq = 0.0f;
+    uint32_t homing_ticks = 0;
     uint32_t start_time_ms = esp_timer_get_time() / 1e3;
 
-    /* Shift out to outbound LS */
-    start_time_ms = esp_timer_get_time() / 1e3;
-    while(!get_outbound_limit()) {
+    while (!outbound_hit) {
         odrive.set_input_vel(-ECVT_HOME_SPEED * ECVT_DIR);
-        if ((esp_timer_get_time() / 1e3 - start_time_ms) > timeout_ms) {
-            odrive.set_input_vel(0.0);
+
+        odrive.request_iq();
+
+        float raw_iq = odrive.get_iq();
+        if (raw_iq < 0.0f) {
+            raw_iq = -raw_iq;
+        }
+
+        //exponential moving average low pass filter
+        //avoid false triggering from current spikes
+        //lower alpha is smoother time domain
+        filtered_iq = alpha * raw_iq + (1.0f - alpha) * filtered_iq;
+
+        uint32_t now_ms = esp_timer_get_time() / 1e3;
+
+        if ((now_ms - start_time_ms) > timeout_ms) {
+            odrive.set_input_vel(0.0f);
             return false;
         }
+
+        if (homing_ticks > min_move_cycles && filtered_iq > outbound_iq_threshold) {
+            outbound_hit = true;
+        }
+
+        homing_ticks++;
+
         vTaskDelay(pdMS_TO_TICKS(10));
     }
 
-    /* Shift in to engaged LS */
+    odrive.set_input_vel(0.0f);
+    vTaskDelay(pdMS_TO_TICKS(100));
+
+    filtered_iq = 0.0f;
+    homing_ticks = 0;
     start_time_ms = esp_timer_get_time() / 1e3;
-    while(!get_engage_limit()) {
+
+    while (!engage_hit) {
         odrive.set_input_vel(ECVT_HOME_SPEED * ECVT_DIR);
-        if ((esp_timer_get_time() / 1e3 - start_time_ms) > timeout_ms) {
-            odrive.set_input_vel(0.0);
+
+        odrive.request_iq();
+
+        float raw_iq = odrive.get_iq();
+        if (raw_iq < 0.0f) {
+            raw_iq = -raw_iq;
+        }
+
+        filtered_iq = alpha * raw_iq + (1.0f - alpha) * filtered_iq;
+
+        uint32_t now_ms = esp_timer_get_time() / 1e3;
+
+        if (now_ms - start_time_ms > timeout_ms) {
+            odrive.set_input_vel(0.0f);
             return false;
         }
+
+        if (homing_ticks > min_move_cycles && filtered_iq > engage_iq_threshold) {
+            engage_hit = true;
+        }
+
+        homing_ticks++;
+
         vTaskDelay(pdMS_TO_TICKS(10));
     }
+
+    //odrive.set_absolute_position(engage_position_offset * ECVT_DIR);
     odrive.set_absolute_position(0.0f);
 
-    actuator_engage_position = 0.0f; 
+    actuator_engage_position = 0;
 
     odrive.set_input_vel(0.0);
 
