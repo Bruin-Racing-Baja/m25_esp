@@ -94,9 +94,9 @@ bool ECVTController::home_actuator(uint32_t timeout_ms)
     bool engage_hit = false;
     float outbound_iq_threshold = 10.0f; //amps
     float engage_iq_threshold = 10.0f; //amps
-    float engage_position_offset = 0.5; //turns
+    float engage_position_offset = 1.5; //turns
     float alpha = 0.10f;  //low pass filter weight
-    uint32_t min_move_cycles = 30; //ignore the first few cycles to avoid false triggering on inital motor accel
+    uint32_t min_move_cycles = 10; //ignore the first few cycles to avoid false triggering on inital motor accel
 
     float filtered_iq = 0.0f;
     uint32_t homing_ticks = 0;
@@ -168,12 +168,12 @@ bool ECVTController::home_actuator(uint32_t timeout_ms)
         vTaskDelay(pdMS_TO_TICKS(10));
     }
 
-    //odrive.set_absolute_position(engage_position_offset * ECVT_DIR);
-    odrive.set_absolute_position(0.0f);
+    odrive.set_absolute_position(engage_position_offset * ECVT_DIR);
+    //odrive.set_absolute_position(0.0f);
 
-    actuator_engage_position = 0;
+    actuator_engage_position = 0.0f;
 
-    odrive.set_input_vel(0.0);
+    odrive.set_input_vel(0.0f);
 
     return true; 
 }
