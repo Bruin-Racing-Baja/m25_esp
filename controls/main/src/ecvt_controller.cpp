@@ -14,7 +14,12 @@ ECVTController::ECVTController(ShiftRegister* sr, bool wait_for_can)
       shift_reg(sr), 
       control_cycle_count(0),
       last_engine_rpm_error(0),
-      actuator_engage_position(0)
+      actuator_engage_position(0),
+      error_k_1(0.0f),
+      error_k_2(0.0f),
+      velocity_command_k_0(0.0f),
+      velocity_command_k_1(0.0f),
+      velocity_command_k_2(0.0f)
 {
     instance = this; 
 }
@@ -123,8 +128,8 @@ bool ECVTController::home_actuator(uint32_t timeout_ms)
 */
 void ECVTController::control_loop()
 {
-    float dt_s = CONTROL_FUNCTION_INTERVAL_MS * SECONDS_PER_MS;
-    float override = 0.0f;
+    // float dt_s = CONTROL_FUNCTION_INTERVAL_MS * SECONDS_PER_MS;
+    // float override = 0.0f;
     
     while(true)
     {
@@ -144,20 +149,30 @@ void ECVTController::control_loop()
         float filtered_secondary_rpm = gear_rpm_time_filter.update(gearbox_rpm);
         filtered_secondary_rpm = filtered_secondary_rpm / GEAR_TO_SECONDARY_RATIO;
 
-        /* RPM error from target */
-        float engine_rpm_error = filtered_primary_rpm - ECVT_TARGET_RPM;
-        float filtered_engine_rpm_error = engine_rpm_derror_filter.update(engine_rpm_error);
+        /* get rpm error */
+        float engine_rpm_error =
+            filtered_primary_rpm - ECVT_TARGET_RPM;
 
-        float engine_rpm_derror =
-            (filtered_engine_rpm_error - last_engine_rpm_error) / dt_s;
-        last_engine_rpm_error = filtered_engine_rpm_error;
+        /* filter RPM error*/
+        float filtered_engine_rpm_error =
+            engine_rpm_derror_filter.update(engine_rpm_error);
 
-        /* Calculate velocity command */
-        float velocity_command =
-            (engine_rpm_error * ACTUATOR_KP +
-            MAX(0, engine_rpm_derror * ACTUATOR_KD));
-        velocity_command = CLAMP(velocity_command, -ECVT_CONTROLLER_OUTBOUND_VELOCITY_LIMIT, ECVT_CONTROLLER_INBOUND_VELOCITY_LIMIT);
-        
+        /* difference equation of bilinear approximation of continuous PID  */
+        velocity_command_k_0 =
+            velocity_command_k_2
+            + ACTUATOR_A0 * filtered_engine_rpm_error
+            + ACTUATOR_A1 * error_k_1
+            + ACTUATOR_A2 * error_k_2;
+
+        /* clamp within velocity limits (MUST KEEP SEPARATE FROM CONTROLLER!) */
+        float velocity_command = CLAMP(velocity_command_k_0, -ECVT_CONTROLLER_OUTBOUND_VELOCITY_LIMIT, ECVT_CONTROLLER_INBOUND_VELOCITY_LIMIT);
+
+        /* update controller state */
+        error_k_2 = error_k_1;
+        error_k_1 = filtered_engine_rpm_error;
+        velocity_command_k_2 = velocity_command_k_1;
+        velocity_command_k_1 = velocity_command_k_0;
+
         odrive.set_axis_state(AXIS_STATE_CLOSED_LOOP_CONTROL);
         odrive.set_controller_mode(CTRL_MODE_VELOCITY_CONTROL, INPUT_MODE_PASSTHROUGH);
 
