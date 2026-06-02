@@ -37,7 +37,6 @@ void ECVTController::init(bool wait_for_can)
 
     /* Initialize CAN BUS */
     odrive.set_ecvt_odrive();
-    odrive.set_limits(ECVT_ODRIVE_VELOCITY_LIMIT, ECVT_ODRIVE_CURRENT_LIMIT);
     odrive.clear_errors();
 
     /* Wait for CAN Heartbeat - Blinking LEDs */
@@ -52,11 +51,16 @@ void ECVTController::init(bool wait_for_can)
     }
     shift_reg->write_all_leds(true);
 
+    //just in case the actuator is breakable
+    odrive.set_limits(ECVT_ODRIVE_HOMING_VELOCITY_LIMIT, ECVT_ODRIVE_HOMING_CURRENT_LIMIT);
+
     bool homed = home_actuator(); 
     if (homed) {
         ESP_LOGI(TAG, "Actuator Homed!");
         shift_reg->write_all_leds(false);
     }
+
+    odrive.set_limits(ECVT_ODRIVE_HOMING_VELOCITY_LIMIT, ECVT_ODRIVE_HOMING_CURRENT_LIMIT);
 
     /* Initialize Interrupts */
     attachInterrupt(ENGINE_GEARTOOTH_SENSOR_PIN, primary_isr, InterruptMode::RISING_EDGE);    
@@ -92,8 +96,8 @@ bool ECVTController::home_actuator(uint32_t timeout_ms)
 
     bool outbound_hit = false;
     bool engage_hit = false;
-    float outbound_iq_threshold = 10.0f; //amps
-    float engage_iq_threshold = 10.0f; //amps
+    float outbound_iq_threshold = ECVT_HOMING_CURRENT_LIMIT - 1.0f; //amps
+    float engage_iq_threshold = ECVT_HOMING_CURRENT_LIMIT - 1.0f; //amps
     float engage_position_offset = 1.5; //turns
     float alpha = 0.10f;  //low pass filter weight
     uint32_t min_move_cycles = 10; //ignore the first few cycles to avoid false triggering on inital motor accel
@@ -164,15 +168,11 @@ bool ECVTController::home_actuator(uint32_t timeout_ms)
         }
 
         homing_ticks++;
-
         vTaskDelay(pdMS_TO_TICKS(10));
     }
 
     odrive.set_absolute_position(engage_position_offset * ECVT_DIR);
-    //odrive.set_absolute_position(0.0f);
-
     actuator_engage_position = 0.0f;
-
     odrive.set_input_vel(0.0f);
 
     return true; 
