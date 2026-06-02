@@ -32,7 +32,6 @@ void ECVTController::init(bool wait_for_can)
 
     /* Initialize CAN BUS */
     odrive.set_ecvt_odrive();
-    odrive.set_limits(ECVT_ODRIVE_VELOCITY_LIMIT, ECVT_ODRIVE_CURRENT_LIMIT);
     odrive.clear_errors();
 
     /* Wait for CAN Heartbeat - Blinking LEDs */
@@ -46,6 +45,8 @@ void ECVTController::init(bool wait_for_can)
         }
     }
     shift_reg->write_all_leds(true);
+
+    odrive.set_limits(ECVT_ODRIVE_VELOCITY_LIMIT, ECVT_ODRIVE_CURRENT_LIMIT);
 
     bool homed = home_actuator(); 
     if (homed) {
