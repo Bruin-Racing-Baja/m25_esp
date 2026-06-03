@@ -51,7 +51,7 @@ void ECVTController::init(bool wait_for_can)
     }
     shift_reg->write_all_leds(true);
 
-    //just in case the actuator is breakable
+    //just in case the actuator is breakable, also can tune homing current limit to ride on belt engagement
     odrive.set_limits(ECVT_ODRIVE_HOMING_VELOCITY_LIMIT, ECVT_ODRIVE_HOMING_CURRENT_LIMIT);
 
     bool homed = home_actuator(); 
@@ -60,7 +60,7 @@ void ECVTController::init(bool wait_for_can)
         shift_reg->write_all_leds(false);
     }
 
-    odrive.set_limits(ECVT_ODRIVE_HOMING_VELOCITY_LIMIT, ECVT_ODRIVE_HOMING_CURRENT_LIMIT);
+    odrive.set_limits(ECVT_ODRIVE_VELOCITY_LIMIT, ECVT_ODRIVE_CURRENT_LIMIT);
 
     /* Initialize Interrupts */
     attachInterrupt(ENGINE_GEARTOOTH_SENSOR_PIN, primary_isr, InterruptMode::RISING_EDGE);    
@@ -96,8 +96,8 @@ bool ECVTController::home_actuator(uint32_t timeout_ms)
 
     bool outbound_hit = false;
     bool engage_hit = false;
-    float outbound_iq_threshold = ECVT_HOMING_CURRENT_LIMIT - 1.0f; //amps
-    float engage_iq_threshold = ECVT_HOMING_CURRENT_LIMIT - 1.0f; //amps
+    float outbound_iq_threshold = ECVT_ODRIVE_HOMING_CURRENT_LIMIT - 1.0f; //amps
+    float engage_iq_threshold = ECVT_ODRIVE_HOMING_CURRENT_LIMIT - 1.0f; //amps
     float engage_position_offset = 1.5; //turns
     float alpha = 0.10f;  //low pass filter weight
     uint32_t min_move_cycles = 10; //ignore the first few cycles to avoid false triggering on inital motor accel
@@ -173,7 +173,14 @@ bool ECVTController::home_actuator(uint32_t timeout_ms)
 
     odrive.set_absolute_position(engage_position_offset * ECVT_DIR);
     actuator_engage_position = 0.0f;
-    odrive.set_input_vel(0.0f);
+    
+    //position control to engage_position during homing to avoid shooting out agressively once control loop starts
+    uint32_t actuator_engage_adjustment_ms = 500; 
+    odrive.set_controller_mode(CTRL_MODE_POSITION_CONTROL, INPUT_MODE_PASSTHROUGH);
+    odrive.set_input_pos(actuator_engage_position * ECVT_DIR, 0, 0);
+    vTaskDelay(pdMS_TO_TICKS(actuator_engage_adjustment_ms));
+    odrive.set_controller_mode(CTRL_MODE_VELOCITY_CONTROL, INPUT_MODE_PASSTHROUGH);
+    odrive.set_input_vel(0);
 
     return true; 
 }
