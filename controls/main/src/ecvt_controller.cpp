@@ -10,6 +10,7 @@ ECVTController* ECVTController::instance = nullptr;
 ECVTController::ECVTController(ShiftRegister* sr, bool wait_for_can)
     : primary_gts(ENGINE_GEARTOOTH_SENSOR_PIN, ENGINE_SAMPLE_WINDOW, ENGINE_COUNTS_PER_ROT), 
       secondary_gts(GEARBOX_GEARTOOTH_SENSOR_PIN, GEAR_SAMPLE_WINDOW, GEAR_COUNTS_PER_ROT),
+      throttle(THROT_POT_PIN, 0, 4095),
       odrive(ECVT_ODRIVE_NODE_ID),
       shift_reg(sr), 
       control_cycle_count(0),
@@ -285,6 +286,8 @@ void ECVTController::control_loop()
         Telemetry::back_buffer->ecvt_inbound_limit_switch = get_inbound_limit(); 
         Telemetry::back_buffer->ecvt_outbound_limit_switch = get_outbound_limit(); 
         Telemetry::back_buffer->ecvt_engage_limit_switch = get_engage_limit(); 
+
+        Telemetry::back_buffer->throttle = throttle.get_throttle();
         
         Telemetry::back_buffer = Telemetry::front_buffer.exchange(Telemetry::back_buffer);
 

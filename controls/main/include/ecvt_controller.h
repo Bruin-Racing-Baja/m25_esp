@@ -10,6 +10,7 @@
 #include <constants.h>
 #include <input_output/shift_register.h>
 #include <odrive.h> 
+#include <sensors/throt_pot_sensor.h>
 
 class ECVTController 
 {
@@ -37,6 +38,8 @@ private:
 
     GearToothSensor primary_gts; 
     GearToothSensor secondary_gts; 
+
+    ThrotPot throttle;
 
     ODrive odrive;
     ShiftRegister* shift_reg;

@@ -58,6 +58,8 @@ struct ControlsData {
     
     float centerlock_inbound_limit_switch;
     float centerlock_outbound_limit_switch; 
+
+    float throttle;
 };
 #pragma pack(pop)
 
