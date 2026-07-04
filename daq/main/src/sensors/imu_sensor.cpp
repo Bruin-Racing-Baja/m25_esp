@@ -14,6 +14,7 @@ IMUSensor::IMUSensor()
     }()),
       accel_x(0), accel_y(0), accel_z(0),
       q_w(1.0f), q_i(0.0f), q_j(0.0f), q_k(0.0f),
+      gyro_x(0), gyro_y(0), gyro_z(0),
       ready(false)
 {}
 
@@ -22,8 +23,9 @@ void IMUSensor::init() {
         printf("IMU init failed\n");
         return;
     }
-    imu.rpt.accelerometer.enable(10000UL);  // 100Hz
-    imu.rpt.rv.enable(10000UL); 
+    imu.rpt.accelerometer.enable(5000UL);  // 200Hz
+    imu.rpt.rv.enable(5000UL);
+    imu.rpt.cal_gyro.enable(5000UL);
     ready = true;
     printf("IMU init done\n");
 }
@@ -45,6 +47,12 @@ void IMUSensor::update() {
                 q_i = q.i;
                 q_j = q.j;
                 q_k = q.k;
+            }
+            if (imu.rpt.cal_gyro.has_new_data()) {
+                bno08x_gyro_t g = imu.rpt.cal_gyro.get();
+                gyro_x = g.x;
+                gyro_y = g.y;
+                gyro_z = g.z;
             }
         }
     // static int print_count = 0;

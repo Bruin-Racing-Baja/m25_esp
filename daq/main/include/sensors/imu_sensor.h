@@ -21,10 +21,14 @@ public:
     float qj() const { return q_j; }
     float qk() const { return q_k; }
 
+    float gx() const { return gyro_x; }
+    float gy() const { return gyro_y; }
+    float gz() const { return gyro_z; }
+
 private:
     BNO08x imu;
     float accel_x, accel_y, accel_z;
-    float q_w, q_i, q_j, q_k; 
+    float q_w, q_i, q_j, q_k, gyro_x, gyro_y, gyro_z; 
     bool ready;
 };
 

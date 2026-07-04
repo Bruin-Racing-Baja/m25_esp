@@ -89,6 +89,9 @@ struct DaqData {
     float qi;
     float qj;
     float qk;
+    float gx;
+    float gy;
+    float gz;
     
 };
 #pragma pack(pop)

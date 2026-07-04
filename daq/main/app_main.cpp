@@ -74,6 +74,10 @@ static void daq_task(void* pvParameters) {
         DaqTelemetry::back_buffer->qi = imu.qi();
         DaqTelemetry::back_buffer->qj = imu.qj();
         DaqTelemetry::back_buffer->qk = imu.qk();
+        DaqTelemetry::back_buffer->gx = imu.gx();
+        DaqTelemetry::back_buffer->gy = imu.gy();
+        DaqTelemetry::back_buffer->gz = imu.gz();
+
         DaqTelemetry::back_buffer->brake_pressure_front_psi = brake_pressure_front.get_pressure_psi();
         DaqTelemetry::back_buffer->brake_pressure_front_raw = brake_pressure_front.get_raw();
         DaqTelemetry::back_buffer->brake_pressure_back_psi = brake_pressure_back.get_pressure_psi();
