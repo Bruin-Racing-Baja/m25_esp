@@ -100,7 +100,16 @@ COLORS = [
 def make_graph_panel(idx, files):
     panel_id = f"panel-{idx}"
 
-    default_preset = list(PRESET_GROUPS.keys())[idx % len(PRESET_GROUPS)]
+def make_graph_panel(idx, files):
+    panel_id = f"panel-{idx}"
+
+    if idx == 0:
+        default_preset = "RPM Overview"
+    elif idx == 1:
+        default_preset = "ECVT Velocity / Current"
+    else:
+        default_preset = list(PRESET_GROUPS.keys())[idx % len(PRESET_GROUPS)]
+    
     default_vars = PRESET_GROUPS[default_preset]
     default_file = files[0] if files else None
 
@@ -371,7 +380,7 @@ def run_app(csv_dir):
         ], className="controls-bar", style={"gap": "12px"}),
 
         # Graph count store
-        dcc.Store(id="graph-count-store", data=3),
+        dcc.Store(id="graph-count-store", data=2),
 
         # Main content
         html.Div(
@@ -412,7 +421,6 @@ def run_app(csv_dir):
     )
     def render_panels(count):
         return [make_graph_panel(i, files) for i in range(count)]
-
 
     @app.callback(
         Output({"type": "var-dropdown", "index": ALL}, "value"),
