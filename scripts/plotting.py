@@ -313,7 +313,8 @@ def run_app(csv_dir):
             dcc.Dropdown(
                 id="csv-file-dropdown",
                 options=[{"label": f, "value": f} for f in files],
-                value=selected_file,
+                value=[selected_file],
+                multi=True,
                 clearable=False,
                 style={
                     "width": "320px",
