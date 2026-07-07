@@ -208,6 +208,7 @@ def run_app(csv_dir):
             .controls-bar .rc-input-number-input { color: #6b7a99; background: #13161f; border: 1px solid #1e2433; }
             .rc-slider-tooltip .rc-slider-tooltip-inner,
             .rc-tooltip .rc-tooltip-inner { color: #6b7a99; background: #13161f; border: 1px solid #1e2433; }
+            .dash-dropdown-value-item { color: #13161f }
             .header-bar { 
                 background: linear-gradient(90deg, #0d0f14 0%, #13161f 50%, #0d0f14 100%);
                 border-bottom: 1px solid #1e2433;
@@ -488,10 +489,6 @@ def PLOTLY_THEME_AXIS():
 
 if __name__ == "__main__":
     params = sys.argv
-
-    files = [f for f in os.listdir('csv_files') if f.endswith('.csv')]
-    filepath = os.path.join('csv_files', files[0])
-    print(f"Loading: {filepath}")
 
     base_dir = os.path.dirname(__file__)
     csv_dir = os.path.join(base_dir, "csv_files")

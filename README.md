@@ -84,5 +84,5 @@ idf.py monitor
 # Running plotting script
 ```
 python -m pip install dash pandas plotlyidf.py build
-python scripts/plotting.py [csv log file name]
+python scripts/plotting.py
 ```
