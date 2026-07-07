@@ -97,8 +97,13 @@ COLORS = [
 ]
 
 
-def make_graph_panel(idx):
+def make_graph_panel(idx, files):
     panel_id = f"panel-{idx}"
+
+    default_preset = list(PRESET_GROUPS.keys())[idx % len(PRESET_GROUPS)]
+    default_vars = PRESET_GROUPS[default_preset]
+    default_file = files[0] if files else None
+
     return html.Div(
         id=panel_id,
         children=[
@@ -111,59 +116,78 @@ def make_graph_panel(idx):
                         "color": DARK_THEME["accent"],
                         "fontWeight": "700",
                     }),
-                    html.Div([
-                        dcc.Dropdown(
-                            id={"type": "preset-dropdown", "index": idx},
-                            options=[{"label": k, "value": k} for k in PRESET_GROUPS],
-                            placeholder="Load preset…",
-                            clearable=True,
-                            style={
-                                "width": "160px",
-                                "fontSize": "11px",
-                                "backgroundColor": DARK_THEME["bg"],
-                                "border": f"1px solid {DARK_THEME['border']}",
-                                "color": DARK_THEME["text"],
-                            },
-                        ),
-                        dcc.Dropdown(
-                            id={"type": "var-dropdown", "index": idx},
-                            options=[{"label": v, "value": v} for v in PLOTTABLE],
-                            multi=True,
-                            value=list(PRESET_GROUPS.values())[idx % len(PRESET_GROUPS)],
-                            placeholder="Select variables…",
-                            style={
-                                "flex": "1",
-                                "fontSize": "11px",
-                                "backgroundColor": DARK_THEME["bg"],
-                                "border": f"1px solid {DARK_THEME['border']}",
-                                "color": DARK_THEME["text"],
-                                "minWidth": "200px",
-                            },
-                        ),
-                        dcc.RadioItems(
-                            id={"type": "chart-type", "index": idx},
-                            options=[
-                                {"label": "Line", "value": "line"},
-                                {"label": "Scatter", "value": "scatter"},
-                                {"label": "Area", "value": "area"},
-                            ],
-                            value="line",
-                            inline=True,
-                            style={"fontSize": "11px", "color": DARK_THEME["subtext"]},
-                            inputStyle={"marginRight": "4px", "accentColor": DARK_THEME["accent"]},
-                            labelStyle={"marginRight": "12px", "color": "white"},
-                        ),
-                    ], style={"display": "flex", "gap": "12px", "alignItems": "center", "flex": "1", "flexWrap": "wrap"}),
+
+                    dcc.Dropdown(
+                        id={"type": "csv-file-dropdown", "index": idx},
+                        options=[{"label": f, "value": f} for f in files],
+                        value=[default_file] if default_file else [],
+                        multi=True,
+                        clearable=False,
+                        placeholder="Select CSV files...",
+                        style={
+                            "width": "260px",
+                            "fontSize": "11px",
+                            "backgroundColor": DARK_THEME["bg"],
+                            "border": f"1px solid {DARK_THEME['border']}",
+                            "color": DARK_THEME["text"],
+                        },
+                    ),
+
+                    dcc.Dropdown(
+                        id={"type": "preset-dropdown", "index": idx},
+                        options=[{"label": k, "value": k} for k in PRESET_GROUPS],
+                        value=default_preset,
+                        placeholder="Load preset...",
+                        clearable=True,
+                        style={
+                            "width": "180px",
+                            "fontSize": "11px",
+                            "backgroundColor": DARK_THEME["bg"],
+                            "border": f"1px solid {DARK_THEME['border']}",
+                            "color": DARK_THEME["text"],
+                        },
+                    ),
+
+                    dcc.Dropdown(
+                        id={"type": "var-dropdown", "index": idx},
+                        options=[{"label": v, "value": v} for v in PLOTTABLE],
+                        multi=True,
+                        value=default_vars,
+                        placeholder="Select variables...",
+                        style={
+                            "flex": "1",
+                            "fontSize": "11px",
+                            "backgroundColor": DARK_THEME["bg"],
+                            "border": f"1px solid {DARK_THEME['border']}",
+                            "color": DARK_THEME["text"],
+                            "minWidth": "260px",
+                        },
+                    ),
+
+                    dcc.RadioItems(
+                        id={"type": "chart-type", "index": idx},
+                        options=[
+                            {"label": "Line", "value": "line"},
+                            {"label": "Scatter", "value": "scatter"},
+                            {"label": "Area", "value": "area"},
+                        ],
+                        value="line",
+                        inline=True,
+                        style={"fontSize": "11px", "color": DARK_THEME["subtext"]},
+                        inputStyle={"marginRight": "4px", "accentColor": DARK_THEME["accent"]},
+                        labelStyle={"marginRight": "12px", "color": "white"},
+                    ),
                 ],
                 style={
                     "display": "flex",
                     "alignItems": "center",
-                    "gap": "16px",
+                    "gap": "12px",
                     "padding": "12px 16px",
                     "borderBottom": f"1px solid {DARK_THEME['border']}",
                     "flexWrap": "wrap",
                 }
             ),
+
             dcc.Graph(
                 id={"type": "graph", "index": idx},
                 style={"height": "340px"},
@@ -325,28 +349,6 @@ def run_app(csv_dir):
                 html.Div([html.Span(f"{num_cols}", className="stat-val"), "CHANNELS"], className="stat-pill"),
             ], style={"display": "flex", "gap": "12px"}),
         ], className="header-bar"),
-
-        # File Selection
-        html.Div([
-            html.Span(
-                "FILES:",
-                style={"fontSize": "11px", "color": DARK_THEME["subtext"], "letterSpacing": "2px"}
-            ),
-            dcc.Dropdown(
-                id="csv-file-dropdown",
-                options=[{"label": f, "value": f} for f in files],
-                value=[selected_file],
-                multi=True,
-                clearable=False,
-                style={
-                    "width": "320px",
-                    "fontSize": "11px",
-                    "backgroundColor": DARK_THEME["bg"],
-                    "border": f"1px solid {DARK_THEME['border']}",
-                    "color": DARK_THEME["text"],
-                },
-            ),
-        ], className="files-selection", style={"gap": "12px"}),
         
         # Controls bar
         html.Div([
@@ -388,21 +390,30 @@ def run_app(csv_dir):
         prevent_initial_call=True,
     )
     def update_graph_count(add, remove, current):
+        try:
+            current = int(current)
+        except (TypeError, ValueError):
+            current = 3
+
         triggered = ctx.triggered_id
+
         if triggered == "add-graph-btn":
             return min(current + 1, 8)
-        elif triggered == "remove-graph-btn":
+
+        if triggered == "remove-graph-btn":
             return max(current - 1, 1)
+
         return current
+
 
     @app.callback(
         Output("graphs-container", "children"),
         Input("graph-count-store", "data"),
     )
     def render_panels(count):
-        return [make_graph_panel(i) for i in range(count)]
+        return [make_graph_panel(i, files) for i in range(count)]
 
-    # Sync preset → variable selection
+
     @app.callback(
         Output({"type": "var-dropdown", "index": ALL}, "value"),
         Input({"type": "preset-dropdown", "index": ALL}, "value"),
@@ -416,72 +427,101 @@ def run_app(csv_dir):
                 out[i] = PRESET_GROUPS[pv]
         return out
 
-    # Render each graph
+
     @app.callback(
         Output({"type": "graph", "index": ALL}, "figure"),
         Input({"type": "var-dropdown", "index": ALL}, "value"),
         Input({"type": "chart-type", "index": ALL}, "value"),
         Input("x-range-slider", "value"),
-        Input("csv-file-dropdown", "value"),
+        Input({"type": "csv-file-dropdown", "index": ALL}, "value"),
     )
-    def update_graphs(var_lists, chart_types, x_range, selected_file):
-        filepath = os.path.join(csv_dir, selected_file)
-        df = pd.read_csv(filepath)
-
-        if "target_rpm" in df.columns and "engine_rpm" in df.columns:
-            df["target_engine_rpm_diff"] = df["target_rpm"] - df["engine_rpm"]
-            df["target_engine_rpm_diff_sum"] = df["target_engine_rpm_diff"].cumsum()
-
-        x_col = X_COL if X_COL in df.columns else df.columns[0]
-
+    def update_graphs(var_lists, chart_types, x_range, selected_files_by_graph):
         figs = []
-        for vars_selected, chart_type in zip(var_lists, chart_types):
+
+        for vars_selected, chart_type, selected_files in zip(var_lists, chart_types, selected_files_by_graph):
+            if not selected_files:
+                selected_files = [files[0]]
+
+            if isinstance(selected_files, str):
+                selected_files = [selected_files]
+
+            fig = go.Figure()
+
             if not vars_selected:
-                fig = go.Figure()
                 fig.update_layout(**PLOTLY_TEMPLATE["layout"], title="— No variables selected —")
                 figs.append(fig)
                 continue
 
-            # Filter by x range
-            mask = (df[x_col] >= x_range[0]) & (df[x_col] <= x_range[1])
-            dff = df[mask].copy()
+            for selected_file in selected_files:
+                filepath = os.path.join(csv_dir, selected_file)
+                df = pd.read_csv(filepath)
 
-            valid_vars = [v for v in vars_selected if v in dff.columns]
+                if "target_rpm" in df.columns and "engine_rpm" in df.columns:
+                    df["target_engine_rpm_diff"] = df["target_rpm"] - df["engine_rpm"]
+                    df["target_engine_rpm_diff_sum"] = df["target_engine_rpm_diff"].cumsum()
 
-            if chart_type == "scatter":
-                fig = go.Figure()
+                if "time_ms" in df.columns:
+                    df["time_s"] = (df["time_ms"] - df["time_ms"].iloc[0]) / 1000.0
+                    x_col = "time_s"
+                    min_x = x_range[0] / 1000.0
+                    max_x = x_range[1] / 1000.0
+                else:
+                    x_col = df.columns[0]
+                    min_x = x_range[0]
+                    max_x = x_range[1]
+
+                mask = (df[x_col] >= min_x) & (df[x_col] <= max_x)
+                dff = df[mask].copy()
+
+                valid_vars = [v for v in vars_selected if v in dff.columns]
+
                 for i, v in enumerate(valid_vars):
-                    fig.add_trace(go.Scatter(
-                        x=dff[x_col], y=dff[v], mode="markers",
-                        name=v, marker={"color": COLORS[i % len(COLORS)], "size": 3},
-                    ))
-            elif chart_type == "area":
-                fig = go.Figure()
-                for i, v in enumerate(valid_vars):
-                    color = COLORS[i % len(COLORS)]
-                    r, g, b = int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16)
-                    fill_color = f"rgba({r},{g},{b},0.15)"
-                    fig.add_trace(go.Scatter(
-                        x=dff[x_col], y=dff[v], mode="lines", name=v,
-                        fill="tozeroy",
-                        line={"color": color, "width": 1.5},
-                        fillcolor=fill_color,
-                    ))
-            else:
-                fig = go.Figure()
-                for i, v in enumerate(valid_vars):
-                    fig.add_trace(go.Scatter(
-                        x=dff[x_col], y=dff[v], mode="lines", name=v,
-                        line={"color": COLORS[i % len(COLORS)], "width": 1.5},
-                    ))
+                    if len(selected_files) == 1:
+                        trace_name = v
+                    else:
+                        trace_name = f"{v} ({selected_file})"
+
+                    if chart_type == "scatter":
+                        fig.add_trace(go.Scatter(
+                            x=dff[x_col],
+                            y=dff[v],
+                            mode="markers",
+                            name=trace_name,
+                            marker={"color": COLORS[i % len(COLORS)], "size": 3},
+                        ))
+
+                    elif chart_type == "area":
+                        color = COLORS[i % len(COLORS)]
+                        r, g, b = int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16)
+                        fill_color = f"rgba({r},{g},{b},0.15)"
+
+                        fig.add_trace(go.Scatter(
+                            x=dff[x_col],
+                            y=dff[v],
+                            mode="lines",
+                            name=trace_name,
+                            fill="tozeroy",
+                            line={"color": color, "width": 1.5},
+                            fillcolor=fill_color,
+                        ))
+
+                    else:
+                        fig.add_trace(go.Scatter(
+                            x=dff[x_col],
+                            y=dff[v],
+                            mode="lines",
+                            name=trace_name,
+                            line={"color": COLORS[i % len(COLORS)], "width": 1.5},
+                        ))
 
             layout_kwargs = dict(PLOTLY_TEMPLATE["layout"])
             layout_kwargs["title"] = {
-                "text": " · ".join(valid_vars[:4]) + ("…" if len(valid_vars) > 4 else ""),
+                "text": " · ".join(vars_selected[:4]) + ("..." if len(vars_selected) > 4 else ""),
                 "font": {"color": DARK_THEME["accent"], "size": 12}
             }
-            layout_kwargs["xaxis"] = {**PLOTLY_THEME_AXIS(), "title": f"{x_col} (ms)"}
+            layout_kwargs["xaxis"] = {**PLOTLY_THEME_AXIS(), "title": "Time (s)"}
             layout_kwargs["yaxis"] = {**PLOTLY_THEME_AXIS(), "title": "Value"}
+
             fig.update_layout(**layout_kwargs)
             figs.append(fig)
 
