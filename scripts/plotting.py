@@ -1,3 +1,5 @@
+import os
+
 from dash import Dash, dcc, html, Input, Output, State, ctx, ALL
 import pandas as pd
 import plotly.express as px
@@ -127,7 +129,7 @@ def make_graph_panel(idx):
                             inline=True,
                             style={"fontSize": "11px", "color": DARK_THEME["subtext"]},
                             inputStyle={"marginRight": "4px", "accentColor": DARK_THEME["accent"]},
-                            labelStyle={"marginRight": "12px"},
+                            labelStyle={"marginRight": "12px", "color": "white"},
                         ),
                     ], style={"display": "flex", "gap": "12px", "alignItems": "center", "flex": "1", "flexWrap": "wrap"}),
                 ],
@@ -156,11 +158,18 @@ def make_graph_panel(idx):
     )
 
 
-def run_app(filepath):
+def run_app(csv_dir):
+    files = sorted([f for f in os.listdir(csv_dir) if f.endswith(".csv")])
+
+    if not files:
+        raise FileNotFoundError("No CSV files found")
+
+    selected_file = files[0]
+    filepath = os.path.join(csv_dir, selected_file)
+
     df = pd.read_csv(filepath)
 
     # Compute derived channels
-    print(df.columns)
     if "target_rpm" in df.columns and "engine_rpm" in df.columns:
         df["target_engine_rpm_diff"] = df["target_rpm"] - df["engine_rpm"]
         df["target_engine_rpm_diff_sum"] = df["target_engine_rpm_diff"].cumsum()
@@ -192,9 +201,13 @@ def run_app(filepath):
             .Select-option { background-color: #13161f !important; color: #e0e6f0 !important; }
             .Select-option:hover { background-color: #1e2433 !important; }
             .dash-dropdown .Select-multi-value-wrapper .Select-value { background: #1e2433 !important; border-color: #00e5ff33 !important; }
-            .dash-dropdown-value { color: #1e2433 }
-            .dash-radioitems-inline  { color: #e0e6f0 }
-            .dash-range-slider-input { color: #1e2433 }
+            .controls-bar input[type="number"],
+            .controls-bar input[type="text"],
+            .controls-bar [role="spinbutton"],
+            .controls-bar .rc-input-number,
+            .controls-bar .rc-input-number-input { color: #6b7a99; background: #13161f; border: 1px solid #1e2433; }
+            .rc-slider-tooltip .rc-slider-tooltip-inner,
+            .rc-tooltip .rc-tooltip-inner { color: #6b7a99; background: #13161f; border: 1px solid #1e2433; }
             .header-bar { 
                 background: linear-gradient(90deg, #0d0f14 0%, #13161f 50%, #0d0f14 100%);
                 border-bottom: 1px solid #1e2433;
@@ -233,6 +246,13 @@ def run_app(filepath):
                 gap: 16px;
                 flex-wrap: wrap;
             }
+            .files-selection {
+                background: #13161f;
+                border-bottom: 1px solid #1e2433;
+                padding: 12px 32px;
+                display: flex;
+                align-items: center;
+             }
             .btn {
                 background: transparent;
                 border: 1px solid #1e2433;
@@ -283,6 +303,27 @@ def run_app(filepath):
             ], style={"display": "flex", "gap": "12px"}),
         ], className="header-bar"),
 
+        # File Selection
+        html.Div([
+            html.Span(
+                "FILES:",
+                style={"fontSize": "11px", "color": DARK_THEME["subtext"], "letterSpacing": "2px"}
+            ),
+            dcc.Dropdown(
+                id="csv-file-dropdown",
+                options=[{"label": f, "value": f} for f in files],
+                value=selected_file,
+                clearable=False,
+                style={
+                    "width": "320px",
+                    "fontSize": "11px",
+                    "backgroundColor": DARK_THEME["bg"],
+                    "border": f"1px solid {DARK_THEME['border']}",
+                    "color": DARK_THEME["text"],
+                },
+            ),
+        ], className="files-selection", style={"gap": "12px"}),
+        
         # Controls bar
         html.Div([
             html.Span("GRAPHS:", style={"fontSize": "11px", "color": DARK_THEME["subtext"], "letterSpacing": "2px"}),
@@ -357,8 +398,18 @@ def run_app(filepath):
         Input({"type": "var-dropdown", "index": ALL}, "value"),
         Input({"type": "chart-type", "index": ALL}, "value"),
         Input("x-range-slider", "value"),
+        Input("csv-file-dropdown", "value"),
     )
-    def update_graphs(var_lists, chart_types, x_range):
+    def update_graphs(var_lists, chart_types, x_range, selected_file):
+        filepath = os.path.join(csv_dir, selected_file)
+        df = pd.read_csv(filepath)
+
+        if "target_rpm" in df.columns and "engine_rpm" in df.columns:
+            df["target_engine_rpm_diff"] = df["target_rpm"] - df["engine_rpm"]
+            df["target_engine_rpm_diff_sum"] = df["target_engine_rpm_diff"].cumsum()
+
+        x_col = X_COL if X_COL in df.columns else df.columns[0]
+
         figs = []
         for vars_selected, chart_type in zip(var_lists, chart_types):
             if not vars_selected:
@@ -392,7 +443,7 @@ def run_app(filepath):
                         line={"color": color, "width": 1.5},
                         fillcolor=fill_color,
                     ))
-            else:  # line
+            else:
                 fig = go.Figure()
                 for i, v in enumerate(valid_vars):
                     fig.add_trace(go.Scatter(
@@ -401,7 +452,10 @@ def run_app(filepath):
                     ))
 
             layout_kwargs = dict(PLOTLY_TEMPLATE["layout"])
-            layout_kwargs["title"] = {"text": " · ".join(valid_vars[:4]) + ("…" if len(valid_vars) > 4 else ""), "font": {"color": DARK_THEME["accent"], "size": 12}}
+            layout_kwargs["title"] = {
+                "text": " · ".join(valid_vars[:4]) + ("…" if len(valid_vars) > 4 else ""),
+                "font": {"color": DARK_THEME["accent"], "size": 12}
+            }
             layout_kwargs["xaxis"] = {**PLOTLY_THEME_AXIS(), "title": f"{x_col} (ms)"}
             layout_kwargs["yaxis"] = {**PLOTLY_THEME_AXIS(), "title": "Value"}
             fig.update_layout(**layout_kwargs)
@@ -409,9 +463,16 @@ def run_app(filepath):
 
         return figs
 
-    port = random.randint(8050, 8099)
+    port = 8051
     print(f"\n🚀  PLUNETTE running → http://0.0.0.0:{port}\n")
-    app.run(host="0.0.0.0", port=port, debug=True, use_reloader=False)
+    app.run(
+        host="0.0.0.0",
+        port=port,
+        debug=True,
+        use_reloader=True,
+        dev_tools_hot_reload=True,
+        dev_tools_hot_reload_interval=1000,
+    )
     return port
 
 
@@ -425,18 +486,17 @@ def PLOTLY_THEME_AXIS():
         "zerolinecolor": "#1e2433",
     }
 
-
 if __name__ == "__main__":
     params = sys.argv
-    if len(params) <= 1:
-        print("Usage: python plunette_dashboard.py <logfile.csv>")
-        sys.exit(1)
 
-    filename = params[1]
-    filepath = filename  # accept full or relative path directly
+    files = [f for f in os.listdir('csv_files') if f.endswith('.csv')]
+    filepath = os.path.join('csv_files', files[0])
     print(f"Loading: {filepath}")
 
-    port = run_app(filepath)
+    base_dir = os.path.dirname(__file__)
+    csv_dir = os.path.join(base_dir, "csv_files")
+
+    port = run_app(csv_dir)
 
     hostname = socket.gethostname()
     ip = socket.gethostbyname(hostname)
