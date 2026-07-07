@@ -24,12 +24,34 @@ X_COL = "time_ms"
 PLOTTABLE = [v for v in VAR_NAMES if v != X_COL]
 
 PRESET_GROUPS = {
-    "RPM Overview":    ["engine_rpm", "secondary_rpm", "filtered_engine_rpm", "filtered_secondary_rpm", "target_rpm", "target_engine_rpm_diff", "target_engine_rpm_diff_sum"],
-    "Filtered RPM":    ["filtered_engine_rpm", "filtered_secondary_rpm", "target_rpm"],
-    "RPM Error":       ["engine_rpm", "target_rpm", "engine_rpm_error"],
-    "ECVT Control":    ["velocity_command", "engine_rpm_error"],
-    "Limit Switches":  ["inbound_limit_switch", "outbound_limit_switch", "engage_limit_switch"],
-    "Gear & Engine":   ["engine_count", "gear_count"],
+    "RPM Overview": [
+        "engine_rpm",
+        "secondary_rpm",
+        "filtered_engine_rpm",
+        "filtered_secondary_rpm",
+        "target_rpm",
+        "target_engine_rpm_diff",
+    ],
+    "ECVT Velocity / Current": [
+        "ecvt_velocity_command",
+        "ecvt_velocity",
+        "ecvt_iq",
+        "ecvt_bus_current",
+    ],
+    "RPM Error": [
+        "engine_rpm",
+        "target_rpm",
+        "engine_rpm_error",
+    ],
+    "Limit Switches": [
+        "ecvt_inbound_limit_switch",
+        "ecvt_outbound_limit_switch",
+        "ecvt_engage_limit_switch",
+    ],
+    "Gear & Engine": [
+        "engine_count",
+        "gear_count",
+    ],
 }
 
 DARK_THEME = {
