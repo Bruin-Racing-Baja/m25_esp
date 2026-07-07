@@ -193,6 +193,7 @@ def run_app(filepath):
             .Select-option:hover { background-color: #1e2433 !important; }
             .dash-dropdown .Select-multi-value-wrapper .Select-value { background: #1e2433 !important; border-color: #00e5ff33 !important; }
             .dash-dropdown-value { color: #1e2433 }
+            .dash-radioitems-inline  { color: #e0e6f0 }
             .dash-range-slider-input { color: #1e2433 }
             .header-bar { 
                 background: linear-gradient(90deg, #0d0f14 0%, #13161f 50%, #0d0f14 100%);
